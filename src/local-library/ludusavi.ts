@@ -22,9 +22,11 @@ const SKIP_SESSION_SECONDS = 5
 const LUDUSAVI_TIMEOUT_MS = 180_000
 let backupInFlight = false
 
-let detectCache:
-  | { at: number; preferred?: string; value: LudusaviDetectedConfig | undefined }
-  | null = null
+let detectCache: {
+  at: number
+  preferred?: string
+  value: LudusaviDetectedConfig | undefined
+} | null = null
 
 function yamlGet(text: string, keys: string[]): string | undefined {
   const lines = text.split(/\r?\n/)
