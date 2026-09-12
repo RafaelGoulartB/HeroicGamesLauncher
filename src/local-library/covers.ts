@@ -250,7 +250,8 @@ export async function refreshMissingLocalCovers(): Promise<number> {
   try {
     const games = sideloadStore.get('games', [])
     const missing = games.filter(
-      (game) => !game.art_cover && !game.art_square && getLocalGameMeta(game.app_name)
+      (game) =>
+        !game.art_cover && !game.art_square && getLocalGameMeta(game.app_name)
     )
     if (!missing.length) return 0
 

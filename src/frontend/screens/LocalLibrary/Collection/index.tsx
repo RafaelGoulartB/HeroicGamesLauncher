@@ -1,4 +1,11 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import classNames from 'classnames'
 import {
@@ -48,9 +55,8 @@ export default function Collection() {
   const { epic, gog, amazon, zoom, sideloadedLibrary, allTilesInColor } =
     useContext(ContextProvider)
   const [search, setSearch] = useState('')
-  const [installFilter, setInstallFilter] = useState<InstallFilter>(
-    readInstallFilter
-  )
+  const [installFilter, setInstallFilter] =
+    useState<InstallFilter>(readInstallFilter)
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
@@ -110,7 +116,13 @@ export default function Collection() {
       unique.push(game)
     }
     return unique.sort((a, b) => a.title.localeCompare(b.title))
-  }, [sideloadedLibrary, epic.library, gog.library, amazon.library, zoom.library])
+  }, [
+    sideloadedLibrary,
+    epic.library,
+    gog.library,
+    amazon.library,
+    zoom.library
+  ])
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -207,9 +219,7 @@ export default function Collection() {
   }
 
   return (
-    <div
-      className={classNames('collection', { allTilesInColor })}
-    >
+    <div className={classNames('collection', { allTilesInColor })}>
       <header className="collection__header">
         <h5 className="collection__title">
           {t('collection.title', 'Collection')}
@@ -284,29 +294,29 @@ export default function Collection() {
       </header>
 
       <div className="collection__body" ref={listRef}>
-        {groupByStatus
-          ? statuses.map((status) => {
-              const list = grouped.buckets.get(status.id) ?? []
-              if (!list.length) return null
-              return (
-                <section key={status.id} className="collection__group">
-                  <h5>
-                    <span
-                      className="collection__dot"
-                      style={{
-                        background: STATUS_COLORS[status.slug]
-                      }}
-                    />
-                    {status.name}
-                    <span className="collection__count">{list.length}</span>
-                  </h5>
-                  <div className="collection__grid">{renderCards(list)}</div>
-                </section>
-              )
-            })
-          : (
-            <div className="collection__grid">{renderCards(filtered)}</div>
-          )}
+        {groupByStatus ? (
+          statuses.map((status) => {
+            const list = grouped.buckets.get(status.id) ?? []
+            if (!list.length) return null
+            return (
+              <section key={status.id} className="collection__group">
+                <h5>
+                  <span
+                    className="collection__dot"
+                    style={{
+                      background: STATUS_COLORS[status.slug]
+                    }}
+                  />
+                  {status.name}
+                  <span className="collection__count">{list.length}</span>
+                </h5>
+                <div className="collection__grid">{renderCards(list)}</div>
+              </section>
+            )
+          })
+        ) : (
+          <div className="collection__grid">{renderCards(filtered)}</div>
+        )}
         {groupByStatus && grouped.unknown.length > 0 && (
           <section className="collection__group">
             <h5>

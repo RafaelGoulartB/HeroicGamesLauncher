@@ -14,8 +14,14 @@
   color: var(--accent);
 }
 
-.collectionContextMenu > .MuiPaper-root > .MuiMenu-list > .MuiMenuItem-root:hover,
-.collectionContextMenu > .MuiPaper-root > .MuiMenu-list > .MuiMenuItem-root.Mui-selected {
+.collectionContextMenu
+  > .MuiPaper-root
+  > .MuiMenu-list
+  > .MuiMenuItem-root:hover,
+.collectionContextMenu
+  > .MuiPaper-root
+  > .MuiMenu-list
+  > .MuiMenuItem-root.Mui-selected {
   text-decoration: none;
   background-color: var(--navbar-active-background);
 }

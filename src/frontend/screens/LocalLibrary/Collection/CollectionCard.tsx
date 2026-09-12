@@ -1,4 +1,10 @@
-import { useContext, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import {
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties
+} from 'react'
 import classNames from 'classnames'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -42,7 +48,10 @@ import { updateGame } from 'frontend/helpers/library'
 import { hasProgress } from 'frontend/hooks/hasProgress'
 import { hasStatus } from 'frontend/hooks/hasStatus'
 import fallBackImage from 'frontend/assets/heroic_card.jpg'
-import { getCardStatus, getImageFormatting } from 'frontend/screens/Library/components/GameCard/constants'
+import {
+  getCardStatus,
+  getImageFormatting
+} from 'frontend/screens/Library/components/GameCard/constants'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
@@ -110,13 +119,8 @@ export default function CollectionCard({
   const { status, folder } = hasStatus(gameInfo, size)
   const isBrowserGame = gameInfo.install.platform === 'Browser'
   const hasUpdate = Boolean(isInstalled && gameUpdates?.includes(appName))
-  const {
-    isInstalling,
-    isUninstalling,
-    isQueued,
-    isPlaying,
-    isUpdating
-  } = getCardStatus(status, isInstalled, 'grid')
+  const { isInstalling, isUninstalling, isQueued, isPlaying, isUpdating } =
+    getCardStatus(status, isInstalled, 'grid')
   const installingGrayscale = isInstalling
     ? `${125 - getProgress(progress)}%`
     : '100%'
@@ -270,8 +274,7 @@ export default function CollectionCard({
           },
           {
             label: t('button.install'),
-            onclick: () =>
-              openInstallGameModal({ appName, runner, gameInfo }),
+            onclick: () => openInstallGameModal({ appName, runner, gameInfo }),
             show: !isInstalled && !isQueued && isInstallable,
             icon: <Download />
           },
@@ -354,7 +357,9 @@ export default function CollectionCard({
           }
         ]}
       >
-        <div className={classNames('collectionCard', { installed: isInstalled })}>
+        <div
+          className={classNames('collectionCard', { installed: isInstalled })}
+        >
           <Link
             className="collectionCard__link"
             to={`/gamepage/${runner}/${appName}`}

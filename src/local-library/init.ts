@@ -32,9 +32,7 @@ function findPlayniteLibrary(): string | undefined {
       'Documents/Projects/Personal/game-launcher/playnite-database'
     )
   ]
-  return candidates.find(
-    (path) => path && existsSync(join(path, 'games.db'))
-  )
+  return candidates.find((path) => path && existsSync(join(path, 'games.db')))
 }
 
 let registered = false
