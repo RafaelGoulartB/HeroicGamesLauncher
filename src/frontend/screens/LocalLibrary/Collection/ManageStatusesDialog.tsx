@@ -86,11 +86,7 @@ export default function ManageStatusesDialog({ onClose }: Props) {
   }
 
   return (
-    <Dialog
-      onClose={onClose}
-      showCloseButton
-      className="ManageStatusesDialog"
-    >
+    <Dialog onClose={onClose} showCloseButton className="ManageStatusesDialog">
       <DialogHeader>
         {t('collection.status.manageTitle', 'Manage statuses')}
       </DialogHeader>

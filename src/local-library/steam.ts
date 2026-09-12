@@ -48,8 +48,7 @@ type AppState = {
   StateFlags?: string | number
 }
 
-let steamManifestCache: { at: number; manifests: SteamManifest[] } | null =
-  null
+let steamManifestCache: { at: number; manifests: SteamManifest[] } | null = null
 
 export async function findSteamBinary(): Promise<string | null> {
   const candidates = ['steam', 'steam-runtime']
