@@ -80,7 +80,11 @@ import { LaunchOptionSelector } from 'frontend/screens/Settings/components'
 export default React.memo(function GamePage(): JSX.Element | null {
   const { appName, runner } = useParams() as { appName: string; runner: Runner }
   const location = useLocation() as {
-    state: { fromDM: boolean; gameInfo: GameInfo }
+    state: {
+      fromDM?: boolean
+      fromCollection?: boolean
+      gameInfo: GameInfo
+    }
   }
   const { t, i18n } = useTranslation('gamepage')
   const { t: t2 } = useTranslation()
@@ -169,7 +173,11 @@ export default React.memo(function GamePage(): JSX.Element | null {
   const isOffline = connectivity.status !== 'online'
   const notPlayableOffline = isOffline && !gameInfo.canRunOffline
 
-  const backRoute = location.state?.fromDM ? '/download-manager' : '/library'
+  const backRoute = location.state?.fromDM
+    ? '/download-manager'
+    : location.state?.fromCollection
+      ? '/'
+      : '/library'
 
   const storage: Storage = window.localStorage
 

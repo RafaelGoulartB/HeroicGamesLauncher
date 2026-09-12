@@ -1,0 +1,97 @@
+.collection {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  text-align: start;
+}
+
+.collection__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: var(--space-md-fixed);
+  margin: 0;
+  background-color: var(--body-background);
+  background: var(--gradient-body-background, var(--body-background));
+  color: var(--text-secondary);
+}
+
+.collection__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+}
+
+.collection__group h5 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+}
+
+.collection__count {
+  font-size: var(--text-md);
+  font-weight: var(--regular);
+  background: var(--input-background);
+  padding: var(--space-xs);
+  margin-inline-start: var(--space-sm, 4px);
+  border-radius: var(--space-3xs);
+  color: var(--text-default);
+}
+
+.collection__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 420px;
+}
+
+.collection__search {
+  flex-grow: 1;
+  max-width: 700px;
+  min-width: 180px;
+}
+
+.collection__addStatus {
+  display: flex;
+  gap: var(--space-3xs);
+}
+
+.collection__addStatus input {
+  background: var(--input-background, var(--background-darker));
+  border: 1px solid var(--background-darker);
+  color: var(--text-default);
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--space-3xs);
+}
+
+.collection__body {
+  padding: 0 var(--space-md-fixed) var(--space-3xl);
+}
+
+.collection__group {
+  margin-bottom: var(--space-xl);
+}
+
+.collection__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.collection__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  grid-gap: 1.5rem;
+  padding: var(--space-sm) 0 var(--space-md);
+  color: var(--text-secondary);
+}

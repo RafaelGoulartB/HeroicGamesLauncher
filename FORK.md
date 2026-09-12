@@ -25,6 +25,9 @@ out of Heroic's store architecture. The Local "store" is the existing
 | `src/frontend/screens/Game/GamePage/index.tsx`                    | session history next to TimeContainer        |
 | `src/frontend/components/UI/LibraryFilters/index.tsx`             | "Other" → "Local"                            |
 | `electron.vite.config.ts`                                         | alias `local-library`                        |
+| `src/frontend/App.tsx`                                            | Collection is index `/`; Library at `/library` |
+| `src/frontend/components/UI/Sidebar/components/SidebarLinks/`     | Collection is home; Library at `/library`    |
+| `src/frontend/components/UI/Sidebar/components/SidebarItem/`      | `end` so `/` does not stay active everywhere |
 
 Sidecar data lives in Electron stores `local_library/library` and
 `local_library/sessions`, not in `GameInfo`.

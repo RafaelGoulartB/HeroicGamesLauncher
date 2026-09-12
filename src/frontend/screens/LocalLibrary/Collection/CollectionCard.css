@@ -1,0 +1,103 @@
+.collectionCard {
+  background-color: var(--gradient-gamecard);
+  overflow: hidden;
+  position: relative;
+  border-radius: var(--space-3xs);
+  box-shadow: 0px 0px 12px 4px #00000055;
+  display: flex;
+  flex-direction: column;
+  animation: fade-in 0.1s ease-in;
+  aspect-ratio: 173 / 275;
+  width: 100%;
+}
+
+.collectionCard__link {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+}
+
+.collectionCard__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 3 / 4;
+  display: block;
+  transition:
+    filter 0.2s,
+    opacity 0.5s;
+}
+
+.collectionCard__image:not(.installed) {
+  filter: grayscale(var(--installing-effect, 100%));
+}
+
+.collectionCard:hover .collectionCard__image:not(.installed),
+.allTilesInColor .collectionCard__image {
+  filter: grayscale(0);
+}
+
+.collectionCard__playtime {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  left: 8px;
+  font-weight: var(--semibold);
+  font-size: var(--text-sm);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.55) 2.4%,
+    rgba(20, 21, 21, 0.86) 30%
+  );
+  padding: var(--space-3xs) var(--space-2xs);
+  border-radius: 4px;
+  color: var(--text-default);
+  pointer-events: none;
+}
+
+.collectionCard__statusDot {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.collectionCard__title {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  padding: 0.6rem 0.3rem;
+  color: var(--text-secondary);
+  background: var(--gamecard-title-color);
+  transition: 200ms;
+  font-family: var(--primary-font-family);
+  font-size: var(--text-md);
+  font-weight: var(--bold);
+  line-height: 17px;
+  cursor: pointer;
+  z-index: 3;
+  pointer-events: none;
+  transform: translateY(100%);
+  box-sizing: border-box;
+}
+
+.collectionCard__title span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.collectionCard:hover .collectionCard__title {
+  display: block;
+  transform: translateY(0);
+}
