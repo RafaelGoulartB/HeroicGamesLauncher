@@ -287,10 +287,7 @@ export async function waitForSteamSession(params: {
         )
         return
       }
-      await Promise.race([
-        waitForChange(),
-        abortableDelay(2_000, localSignal)
-      ])
+      await Promise.race([waitForChange(), abortableDelay(2_000, localSignal)])
       if (resolveLogFiles) {
         attachLogs(await resolveLogFiles())
       }

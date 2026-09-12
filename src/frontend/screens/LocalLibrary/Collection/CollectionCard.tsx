@@ -121,8 +121,14 @@ export default function CollectionCard({
   const { status, folder } = hasStatus(gameInfo, size)
   const isBrowserGame = gameInfo.install.platform === 'Browser'
   const hasUpdate = Boolean(isInstalled && gameUpdates?.includes(appName))
-  const { isInstalling, isUninstalling, isQueued, isPlaying, isUpdating, isLaunching } =
-    getCardStatus(status, isInstalled, 'grid')
+  const {
+    isInstalling,
+    isUninstalling,
+    isQueued,
+    isPlaying,
+    isUpdating,
+    isLaunching
+  } = getCardStatus(status, isInstalled, 'grid')
   const isTrackingTime = isPlaying || isLaunching
   const installingGrayscale = isInstalling
     ? `${125 - getProgress(progress)}%`

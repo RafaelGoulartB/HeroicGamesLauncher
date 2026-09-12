@@ -140,10 +140,8 @@ export async function tryLaunchLocalGame(
     status: 'playing'
   })
 
-  const {
-    createAbortController,
-    deleteAbortController
-  } = await import('backend/utils/aborthandler/aborthandler')
+  const { createAbortController, deleteAbortController } =
+    await import('backend/utils/aborthandler/aborthandler')
   const { waitForSteamSession } = await import('./playtime-watch')
 
   const abortController = createAbortController(gameInfo.app_name)
