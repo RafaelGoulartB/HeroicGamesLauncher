@@ -65,7 +65,10 @@ import type {
   PlaynitePreviewArgs,
   CompletionStatus,
   SteamClientUriAction,
-  SteamClientUriResult
+  SteamClientUriResult,
+  CollectionBackupInterval,
+  CollectionBackupResult,
+  CollectionSettings
 } from './local-library'
 
 // ts-prune-ignore-next
@@ -264,6 +267,12 @@ interface AsyncIPCFunctions {
     action: SteamClientUriAction
     steamAppId: string
   }) => Promise<SteamClientUriResult>
+  getCollectionSettings: () => Promise<CollectionSettings>
+  setCollectionBackupSettings: (args: {
+    folder: string
+    interval: CollectionBackupInterval
+  }) => Promise<CollectionSettings>
+  runCollectionBackup: (force?: boolean) => Promise<CollectionBackupResult>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

@@ -9,6 +9,8 @@ import {
 import { exportPlayniteLibrary } from './export'
 import { refreshLocalInstallStates } from './install-state'
 import { openSteamClientUri } from './steam'
+import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
+import { getCollectionSettings, setCollectionBackupSettings } from './settings'
 import {
   backfillMissingGameStatuses,
   ensureDefaultStatuses,
@@ -61,6 +63,13 @@ export function registerLocalLibraryIpc() {
   addHandler('openSteamClientUri', (_e, args) =>
     openSteamClientUri(args.action, args.steamAppId)
   )
+  addHandler('getCollectionSettings', () => getCollectionSettings())
+  addHandler('setCollectionBackupSettings', (_e, args) =>
+    setCollectionBackupSettings(args)
+  )
+  addHandler('runCollectionBackup', (_e, force) =>
+    runCollectionBackup(Boolean(force))
+  )
 }
 
 export async function initLocalLibrary() {
@@ -69,4 +78,5 @@ export async function initLocalLibrary() {
   backfillMissingGameStatuses()
   await refreshLocalInstallStates()
   void refreshMissingLocalCovers()
+  void maybeRunScheduledBackup()
 }

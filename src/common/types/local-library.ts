@@ -188,3 +188,24 @@ export interface PlayniteExportResult {
 export type SteamClientUriAction = 'install' | 'uninstall'
 
 export type SteamClientUriResult = { ok: true } | { ok: false; error: string }
+
+export type CollectionBackupInterval = 'daily' | 'weekly' | 'monthly'
+
+export interface CollectionBackupSettings {
+  folder: string
+  interval: CollectionBackupInterval
+  lastBackupAt?: string
+  lastBackupPath?: string
+  lastError?: string
+}
+
+export interface CollectionSettings {
+  backup: CollectionBackupSettings
+}
+
+export interface CollectionBackupResult {
+  ran: boolean
+  skippedReason?: 'disabled' | 'not-due' | 'already-running'
+  path?: string
+  error?: string
+}

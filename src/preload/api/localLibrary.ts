@@ -15,5 +15,8 @@ export const localLibrary = {
   upsertStatus: makeHandlerInvoker('upsertCompletionStatus'),
   deleteStatus: makeHandlerInvoker('deleteCompletionStatus'),
   reorderStatuses: makeHandlerInvoker('reorderCompletionStatuses'),
-  openSteamUri: makeHandlerInvoker('openSteamClientUri')
+  openSteamUri: makeHandlerInvoker('openSteamClientUri'),
+  getSettings: makeHandlerInvoker('getCollectionSettings'),
+  setBackupSettings: makeHandlerInvoker('setCollectionBackupSettings'),
+  runBackup: makeHandlerInvoker('runCollectionBackup')
 }
