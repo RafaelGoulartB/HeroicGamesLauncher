@@ -46,6 +46,16 @@ export function findMetaByPlayniteId(
   )
 }
 
+export function findMetaBySteamAppId(
+  steamAppId: string
+): LocalGameMeta | undefined {
+  if (!steamAppId) return undefined
+  return Object.values(libraryFile.get('games')).find(
+    (game) =>
+      game.steamAppId === steamAppId || game.appName === `steam_${steamAppId}`
+  )
+}
+
 export function getLocalSessions(appName: string): LocalGameSession[] {
   const sessions = sessionFile.get('sessions')[appName] ?? []
   return [...sessions].sort((a, b) => b.startedAt.localeCompare(a.startedAt))

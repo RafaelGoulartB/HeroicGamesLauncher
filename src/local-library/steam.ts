@@ -1,4 +1,5 @@
-import { existsSync, readdirSync } from 'graceful-fs'
+import { parse } from '@node-steam/vdf'
+import { existsSync, readdirSync, readFileSync } from 'graceful-fs'
 import { homedir } from 'os'
 import { basename, dirname, join } from 'path'
 import type LogWriter from 'backend/logger/log_writer'
@@ -8,7 +9,47 @@ import type { GameInfo } from 'common/types'
 import { getLocalGameMeta } from './stores'
 
 const STEAM_INSTALL_CACHE_MS = 15_000
-let installedSteamAppsCache: { at: number; ids: Set<string> } | null = null
+const STEAM_FULLY_INSTALLED = 4
+
+const SKIP_STEAM_APP_IDS = new Set([
+  '228980',
+  '858280',
+  '961940',
+  '1070560',
+  '1113280',
+  '1161040',
+  '1245040',
+  '1391110',
+  '1420170',
+  '1493710',
+  '1580130',
+  '1628350',
+  '1826330',
+  '1887720',
+  '2180100',
+  '2230260',
+  '2348590',
+  '2805730',
+  '3658110'
+])
+
+export type SteamInstalledGame = {
+  appId: string
+  name: string
+}
+
+type SteamManifest = SteamInstalledGame & {
+  fullyInstalled: boolean
+}
+
+type AppState = {
+  appid?: string | number
+  name?: string
+  StateFlags?: string | number
+}
+
+let steamManifestCache: { at: number; manifests: SteamManifest[] } | null =
+  null
 
 export async function findSteamBinary(): Promise<string | null> {
   const candidates = ['steam', 'steam-runtime']
@@ -35,33 +76,107 @@ export async function steamLibraryRoots(): Promise<string[]> {
   )
 }
 
-export async function getInstalledSteamAppIds(
-  force = false
-): Promise<Set<string>> {
+function isNonGameSteamApp(name: string, appId: string): boolean {
+  if (SKIP_STEAM_APP_IDS.has(appId)) return true
+  return (
+    /^(proton(\s|$|\d)|steam linux runtime|steamworks common redistributables|steam runtime)/i.test(
+      name
+    ) ||
+    /\b(proton experimental|proton hotfix|easyanticheat runtime|battleye runtime)\b/i.test(
+      name
+    ) ||
+    /\b(dedicated server|sdk|soundtrack|ost)\b/i.test(name)
+  )
+}
+
+function parseAppManifest(
+  file: string,
+  fallbackAppId: string
+): SteamManifest | undefined {
+  try {
+    const parsed = parse(readFileSync(file, 'utf-8')) as {
+      AppState?: AppState
+    }
+    const state = parsed.AppState
+    const appId = String(state?.appid ?? fallbackAppId)
+    if (!appId) return undefined
+    const flags = Number(state?.StateFlags ?? STEAM_FULLY_INSTALLED)
+    return {
+      appId,
+      name: String(state?.name ?? '').trim(),
+      fullyInstalled: (flags & STEAM_FULLY_INSTALLED) === STEAM_FULLY_INSTALLED
+    }
+  } catch {
+    return {
+      appId: fallbackAppId,
+      name: '',
+      fullyInstalled: true
+    }
+  }
+}
+
+async function readSteamManifests(force = false): Promise<SteamManifest[]> {
   if (
     !force &&
-    installedSteamAppsCache &&
-    Date.now() - installedSteamAppsCache.at < STEAM_INSTALL_CACHE_MS
+    steamManifestCache &&
+    Date.now() - steamManifestCache.at < STEAM_INSTALL_CACHE_MS
   ) {
-    return installedSteamAppsCache.ids
+    return steamManifestCache.manifests
   }
 
-  const ids = new Set<string>()
+  const manifests: SteamManifest[] = []
+  const seen = new Set<string>()
+
   for (const library of await steamLibraryRoots()) {
     const steamapps = join(library, 'steamapps')
     if (!existsSync(steamapps)) continue
     try {
       for (const file of readdirSync(steamapps)) {
         const match = file.match(/^appmanifest_(\d+)\.acf$/i)
-        if (match) ids.add(match[1])
+        if (!match) continue
+        const parsed = parseAppManifest(join(steamapps, file), match[1])
+        if (!parsed || seen.has(parsed.appId)) continue
+        seen.add(parsed.appId)
+        manifests.push(parsed)
       }
     } catch {
       // Unreadable library folder — skip
     }
   }
 
-  installedSteamAppsCache = { at: Date.now(), ids }
-  return ids
+  steamManifestCache = { at: Date.now(), manifests }
+  return manifests
+}
+
+export async function getInstalledSteamAppIds(
+  force = false
+): Promise<Set<string>> {
+  const manifests = await readSteamManifests(force)
+  return new Set(
+    manifests.filter((item) => item.fullyInstalled).map((item) => item.appId)
+  )
+}
+
+export async function listInstalledSteamGames(
+  force = false
+): Promise<SteamInstalledGame[]> {
+  const manifests = await readSteamManifests(force)
+  return manifests.filter(
+    (item) =>
+      item.fullyInstalled &&
+      item.name &&
+      !isNonGameSteamApp(item.name, item.appId)
+  )
+}
+
+export function steamCdnCovers(appId: string): {
+  art_cover: string
+  art_square: string
+} {
+  return {
+    art_square: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900_2x.jpg`,
+    art_cover: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`
+  }
 }
 
 export async function isSteamAppInstalled(appId: string): Promise<boolean> {

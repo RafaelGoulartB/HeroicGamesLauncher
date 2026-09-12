@@ -4,8 +4,20 @@ import { libraryStore as sideloadStore } from 'backend/storeManagers/sideload/el
 import type { GameInfo } from 'common/types'
 import type { LocalGameMeta } from 'common/types/local-library'
 import { pathExists } from './playnite/path-remap'
-import { findSteamBinary, getInstalledSteamAppIds } from './steam'
-import { getLocalGameMeta } from './stores'
+import { inferredStatusId } from './status'
+import {
+  findSteamBinary,
+  getInstalledSteamAppIds,
+  listInstalledSteamGames,
+  steamCdnCovers,
+  type SteamInstalledGame
+} from './steam'
+import {
+  findMetaBySteamAppId,
+  getAllLocalGameMeta,
+  getLocalGameMeta,
+  upsertLocalGameMeta
+} from './stores'
 
 function nextInstallState(
   game: GameInfo,
@@ -36,11 +48,64 @@ function nextInstallState(
   return { is_installed: false, executable: game.install.executable ?? '' }
 }
 
+function steamSideloadEntry(
+  game: SteamInstalledGame,
+  steamBin: string | null
+): { gameInfo: GameInfo; meta: LocalGameMeta } {
+  const appName = `steam_${game.appId}`
+  const covers = steamCdnCovers(game.appId)
+  const executable = steamBin ?? 'steam'
+  return {
+    meta: {
+      appName,
+      runner: 'sideload',
+      playniteId: `steam_${game.appId}`,
+      source: 'steam',
+      launchKind: 'steam-uri',
+      steamAppId: game.appId,
+      storeGameId: game.appId,
+      title: game.name,
+      launcherArgs: `steam://rungameid/${game.appId}`,
+      completionStatusId: inferredStatusId(0)
+    },
+    gameInfo: {
+      runner: 'sideload',
+      app_name: appName,
+      title: game.name,
+      art_cover: covers.art_cover,
+      art_square: covers.art_square,
+      is_installed: true,
+      canRunOffline: false,
+      is_linux_native: true,
+      install: {
+        executable,
+        platform: 'linux',
+        is_dlc: false
+      }
+    }
+  }
+}
+
+function knownSteamAppIds(games: GameInfo[]): Set<string> {
+  const ids = new Set<string>()
+  for (const meta of Object.values(getAllLocalGameMeta())) {
+    if (meta.steamAppId) ids.add(meta.steamAppId)
+  }
+  for (const game of games) {
+    const fromName = game.app_name.match(/^steam_(\d+)$/)
+    if (fromName) ids.add(fromName[1])
+    const meta = getLocalGameMeta(game.app_name)
+    if (meta?.steamAppId) ids.add(meta.steamAppId)
+  }
+  return ids
+}
+
 export async function refreshLocalInstallStates(): Promise<void> {
-  const games = sideloadStore.get('games', [])
+  const games = [...sideloadStore.get('games', [])]
   const installedSteam = await getInstalledSteamAppIds(true)
   const steamBin = await findSteamBinary()
-  let changed = 0
+  let updated = 0
+  let added = 0
 
   for (const game of games) {
     const meta = getLocalGameMeta(game.app_name)
@@ -56,15 +121,35 @@ export async function refreshLocalInstallStates(): Promise<void> {
 
     game.is_installed = next.is_installed
     game.install = { ...game.install, executable: next.executable }
-    changed += 1
+    updated += 1
   }
 
-  if (!changed) return
+  const known = knownSteamAppIds(games)
+  for (const steamGame of await listInstalledSteamGames()) {
+    if (known.has(steamGame.appId) || findMetaBySteamAppId(steamGame.appId)) {
+      continue
+    }
+    const entry = steamSideloadEntry(steamGame, steamBin)
+    games.push(entry.gameInfo)
+    upsertLocalGameMeta(entry.meta)
+    known.add(steamGame.appId)
+    added += 1
+  }
+
+  if (!updated && !added) return
 
   sideloadStore.set('games', games)
-  logInfo(
-    `Updated install state for ${changed} local game(s)`,
-    LogPrefix.Backend
-  )
+  if (updated) {
+    logInfo(
+      `Updated install state for ${updated} local game(s)`,
+      LogPrefix.Backend
+    )
+  }
+  if (added) {
+    logInfo(
+      `Added ${added} installed Steam game(s) to the local library`,
+      LogPrefix.Backend
+    )
+  }
   sendFrontendMessage('refreshLibrary', 'sideload')
 }
