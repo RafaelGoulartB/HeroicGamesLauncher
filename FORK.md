@@ -13,19 +13,19 @@ out of Heroic's store architecture. The Local "store" is the existing
 
 ## Upstream hooks (keep these diffs small when merging)
 
-| File                                                              | Change                                         |
-| ----------------------------------------------------------------- | ---------------------------------------------- |
-| `src/common/types/ipc.ts`                                         | IPC methods for Playnite import / sessions     |
-| `src/backend/storeManagers/sideload/library.ts`                   | `init()` / `refresh()` → local install state   |
-| `src/backend/storeManagers/sideload/games.ts`                     | Steam URI launch, wait for game, stop PID      |
-| `src/backend/launcher.ts`                                         | `recordLocalSession()` after playtime          |
-| `src/preload/api/index.ts`                                        | export `localLibrary`                          |
-| `src/frontend/screens/Game/GamePage/index.tsx`                    | session history next to TimeContainer        |
-| `src/frontend/components/UI/LibraryFilters/index.tsx`             | "Other" → "Local"                              |
-| `electron.vite.config.ts`                                         | alias `local-library`                          |
-| `src/frontend/App.tsx`                                            | Collection is index `/`; Library at `/library` |
-| `src/frontend/components/UI/Sidebar/components/SidebarLinks/`     | Collection is home; Library at `/library`      |
-| `src/frontend/components/UI/Sidebar/components/SidebarItem/`      | `end` so `/` does not stay active everywhere   |
+| File                                                          | Change                                         |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| `src/common/types/ipc.ts`                                     | IPC methods for Playnite import / sessions     |
+| `src/backend/storeManagers/sideload/library.ts`               | `init()` / `refresh()` → local install state   |
+| `src/backend/storeManagers/sideload/games.ts`                 | Steam URI launch, wait for game, stop PID      |
+| `src/backend/launcher.ts`                                     | `recordLocalSession()` after playtime          |
+| `src/preload/api/index.ts`                                    | export `localLibrary`                          |
+| `src/frontend/screens/Game/GamePage/index.tsx`                | session history next to TimeContainer          |
+| `src/frontend/components/UI/LibraryFilters/index.tsx`         | "Other" → "Local"                              |
+| `electron.vite.config.ts`                                     | alias `local-library`                          |
+| `src/frontend/App.tsx`                                        | Collection is index `/`; Library at `/library` |
+| `src/frontend/components/UI/Sidebar/components/SidebarLinks/` | Collection is home; Library at `/library`      |
+| `src/frontend/components/UI/Sidebar/components/SidebarItem/`  | `end` so `/` does not stay active everywhere   |
 
 Sidecar data lives in Electron stores `local_library/library` and
 `local_library/sessions`, not in `GameInfo`.

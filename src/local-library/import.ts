@@ -307,7 +307,10 @@ export async function importPlayniteLibrary(
         mergeLocalSessions(mapped.meta.appName, mapped.sessions)
         result.sessionsImported += mapped.sessions.length
         result.updated += 1
-        if (mapped.meta.runner === 'legendary' || mapped.meta.runner === 'gog') {
+        if (
+          mapped.meta.runner === 'legendary' ||
+          mapped.meta.runner === 'gog'
+        ) {
           result.matchedStore += 1
         }
         continue
