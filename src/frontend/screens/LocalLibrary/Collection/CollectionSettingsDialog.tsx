@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   CollectionBackupInterval,
-  CollectionSettings
+  CollectionSettings,
+  LudusaviBackupFormat,
+  LudusaviCompression
 } from 'common/types/local-library'
-import { PathSelectionBox, SelectField } from 'frontend/components/UI'
+import {
+  PathSelectionBox,
+  SelectField,
+  ToggleSwitch
+} from 'frontend/components/UI'
 import {
   Dialog,
   DialogContent,
@@ -33,6 +39,14 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
   const [settings, setSettings] = useState<CollectionSettings | null>(null)
   const [folder, setFolder] = useState('')
   const [interval, setInterval] = useState<CollectionBackupInterval>('weekly')
+  const [ludusaviEnabled, setLudusaviEnabled] = useState(false)
+  const [useInstalledConfig, setUseInstalledConfig] = useState(true)
+  const [ludusaviBinary, setLudusaviBinary] = useState('')
+  const [ludusaviFolder, setLudusaviFolder] = useState('')
+  const [ludusaviFormat, setLudusaviFormat] =
+    useState<LudusaviBackupFormat>('zip')
+  const [ludusaviCompression, setLudusaviCompression] =
+    useState<LudusaviCompression>('deflate')
   const [saving, setSaving] = useState(false)
   const [running, setRunning] = useState(false)
   const [message, setMessage] = useState('')
@@ -43,6 +57,12 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
     setSettings(next)
     setFolder(next.backup.folder)
     setInterval(next.backup.interval)
+    setLudusaviEnabled(next.ludusavi.enabled)
+    setUseInstalledConfig(next.ludusavi.useInstalledConfig)
+    setLudusaviBinary(next.ludusavi.binaryPath)
+    setLudusaviFolder(next.ludusavi.backupPath)
+    setLudusaviFormat(next.ludusavi.format)
+    setLudusaviCompression(next.ludusavi.compression)
   }
 
   useEffect(() => {
@@ -60,6 +80,27 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
       setSettings(next)
       setFolder(next.backup.folder)
       setInterval(next.backup.interval)
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function persistLudusavi(
+    patch: Parameters<typeof window.api.localLibrary.setLudusaviSettings>[0]
+  ) {
+    setSaving(true)
+    setError('')
+    try {
+      const next = await window.api.localLibrary.setLudusaviSettings(patch)
+      setSettings(next)
+      setLudusaviEnabled(next.ludusavi.enabled)
+      setUseInstalledConfig(next.ludusavi.useInstalledConfig)
+      setLudusaviBinary(next.ludusavi.binaryPath)
+      setLudusaviFolder(next.ludusavi.backupPath)
+      setLudusaviFormat(next.ludusavi.format)
+      setLudusaviCompression(next.ludusavi.compression)
     } catch (err) {
       setError(String(err))
     } finally {
@@ -105,6 +146,11 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
   const lastBackup = settings?.backup.lastBackupAt
     ? formatBackupTime(settings.backup.lastBackupAt)
     : t('collection.settings.backupNever', 'Never')
+  const lastSaveBackup = settings?.ludusavi.lastBackupAt
+    ? formatBackupTime(settings.ludusavi.lastBackupAt)
+    : t('collection.settings.backupNever', 'Never')
+  const detected = settings?.ludusaviDetected
+  const overridesLocked = useInstalledConfig && Boolean(detected?.configPath)
 
   return (
     <Dialog
@@ -165,13 +211,167 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
               ? ` · ${settings.backup.lastBackupPath}`
               : ''}
           </p>
-          {message && <p className="CollectionSettingsDialog__ok">{message}</p>}
-          {(error || (!message && settings?.backup.lastError)) && (
-            <p className="CollectionSettingsDialog__error">
-              {error || settings?.backup.lastError}
+        </section>
+
+        <section className="CollectionSettingsDialog__section">
+          <h4>{t('collection.settings.ludusavi', 'Ludusavi save backup')}</h4>
+          <p>
+            {t(
+              'collection.settings.ludusaviHelp',
+              'When enabled, Heroic Local backs up the game save with Ludusavi after you close a game. Right-click a Collection card to back up that game now.'
+            )}
+          </p>
+          <ToggleSwitch
+            htmlId="collection-ludusavi-enabled"
+            value={ludusaviEnabled}
+            disabled={saving}
+            handleChange={() => {
+              const next = !ludusaviEnabled
+              setLudusaviEnabled(next)
+              void persistLudusavi({ enabled: next })
+            }}
+            title={t(
+              'collection.settings.ludusaviEnabled',
+              'Back up saves when a game closes'
+            )}
+          />
+          {detected ? (
+            <p className="CollectionSettingsDialog__meta">
+              {t(
+                'collection.settings.ludusaviDetected',
+                'Found Ludusavi {{version}} at {{binary}}. Backups go to {{path}} ({{format}}{{compression}}).',
+                {
+                  version: detected.version || '',
+                  binary: detected.binary,
+                  path:
+                    detected.backupPath ||
+                    t('collection.settings.unknown', 'unknown'),
+                  format: detected.format || 'simple',
+                  compression:
+                    detected.format === 'zip' && detected.compression
+                      ? ` / ${detected.compression}`
+                      : ''
+                }
+              )}
+            </p>
+          ) : (
+            <p className="CollectionSettingsDialog__meta">
+              {t(
+                'collection.settings.ludusaviMissing',
+                'Ludusavi was not found automatically. Set the binary and backup folder below.'
+              )}
             </p>
           )}
+          <ToggleSwitch
+            htmlId="collection-ludusavi-use-config"
+            value={useInstalledConfig}
+            disabled={saving || !detected?.configPath}
+            handleChange={() => {
+              const next = !useInstalledConfig
+              setUseInstalledConfig(next)
+              void persistLudusavi({ useInstalledConfig: next })
+            }}
+            title={t(
+              'collection.settings.ludusaviUseConfig',
+              'Use installed Ludusavi settings (path, zip, compression)'
+            )}
+          />
+          <PathSelectionBox
+            htmlId="collection-ludusavi-binary"
+            type="file"
+            path={ludusaviBinary}
+            disabled={saving}
+            onPathChange={(next) => {
+              setLudusaviBinary(next)
+              void persistLudusavi({ binaryPath: next })
+            }}
+            label={t('collection.settings.ludusaviBinary', 'Ludusavi binary')}
+            pathDialogTitle={t(
+              'collection.settings.ludusaviBinary',
+              'Ludusavi binary'
+            )}
+            placeholder={detected?.binary}
+          />
+          <PathSelectionBox
+            htmlId="collection-ludusavi-folder"
+            type="directory"
+            path={ludusaviFolder}
+            disabled={saving || overridesLocked}
+            onPathChange={(next) => {
+              setLudusaviFolder(next)
+              void persistLudusavi({ backupPath: next })
+            }}
+            label={t(
+              'collection.settings.ludusaviFolder',
+              'Save backup folder'
+            )}
+            pathDialogTitle={t(
+              'collection.settings.ludusaviFolder',
+              'Save backup folder'
+            )}
+            placeholder={detected?.backupPath}
+          />
+          <SelectField
+            htmlId="collection-ludusavi-format"
+            label={t('collection.settings.ludusaviFormat', 'Backup format')}
+            value={ludusaviFormat}
+            disabled={saving || overridesLocked}
+            onChange={(event) => {
+              const next = event.target.value as LudusaviBackupFormat
+              setLudusaviFormat(next)
+              void persistLudusavi({ format: next })
+            }}
+          >
+            <MenuItem value="zip">
+              {t('collection.settings.ludusaviZip', 'Zip')}
+            </MenuItem>
+            <MenuItem value="simple">
+              {t('collection.settings.ludusaviSimple', 'Simple folder')}
+            </MenuItem>
+          </SelectField>
+          <SelectField
+            htmlId="collection-ludusavi-compression"
+            label={t(
+              'collection.settings.ludusaviCompression',
+              'Zip compression'
+            )}
+            value={ludusaviCompression}
+            disabled={saving || overridesLocked || ludusaviFormat !== 'zip'}
+            onChange={(event) => {
+              const next = event.target.value as LudusaviCompression
+              setLudusaviCompression(next)
+              void persistLudusavi({ compression: next })
+            }}
+          >
+            <MenuItem value="none">
+              {t('collection.settings.ludusaviNone', 'None')}
+            </MenuItem>
+            <MenuItem value="deflate">Deflate</MenuItem>
+            <MenuItem value="bzip2">Bzip2</MenuItem>
+            <MenuItem value="zstd">Zstd</MenuItem>
+          </SelectField>
+          <p className="CollectionSettingsDialog__meta">
+            {t('collection.settings.lastSaveBackup', 'Last save backup')}:{' '}
+            {lastSaveBackup}
+            {settings?.ludusavi.lastBackupGame
+              ? ` · ${settings.ludusavi.lastBackupGame}`
+              : ''}
+            {settings?.ludusavi.lastBackupPath
+              ? ` · ${settings.ludusavi.lastBackupPath}`
+              : ''}
+          </p>
         </section>
+
+        {message && <p className="CollectionSettingsDialog__ok">{message}</p>}
+        {(error ||
+          (!message &&
+            (settings?.backup.lastError || settings?.ludusavi.lastError))) && (
+          <p className="CollectionSettingsDialog__error">
+            {error ||
+              settings?.backup.lastError ||
+              settings?.ludusavi.lastError}
+          </p>
+        )}
       </DialogContent>
       <DialogFooter>
         <button

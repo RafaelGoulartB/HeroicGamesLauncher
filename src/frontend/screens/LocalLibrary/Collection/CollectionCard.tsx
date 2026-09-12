@@ -20,6 +20,7 @@ import {
   OpenInNew,
   PlayArrow,
   PlaylistRemove,
+  Save,
   Settings,
   Upgrade,
   Visibility,
@@ -225,6 +226,94 @@ export default function CollectionCard({
       return
     }
     setShowUninstallModal(true)
+  }
+
+  async function handleLudusaviBackup() {
+    const backup = window.api.localLibrary.runLudusaviBackup
+    if (typeof backup !== 'function') {
+      showDialogModal({
+        showDialog: true,
+        type: 'ERROR',
+        title: t('collection.ludusavi.backup', 'Ludusavi save backup'),
+        message: t(
+          'collection.ludusavi.restart',
+          'Restart Heroic Local to load Ludusavi backup.'
+        )
+      })
+      return
+    }
+    showDialogModal({
+      showDialog: true,
+      type: 'MESSAGE',
+      title: t('collection.ludusavi.backup', 'Ludusavi save backup'),
+      message: t(
+        'collection.ludusavi.running',
+        'Backing up saves with Ludusavi…'
+      )
+    })
+    try {
+      const result = await backup({
+        appName,
+        title,
+        runner,
+        steamAppId,
+        storeGameId: meta?.storeGameId
+      })
+      if (result.skippedReason === 'already-running') {
+        showDialogModal({
+          showDialog: true,
+          type: 'MESSAGE',
+          title: t('collection.ludusavi.backup', 'Ludusavi save backup'),
+          message: t(
+            'collection.ludusavi.busy',
+            'Ludusavi is already backing up a save. Wait a moment and try again.'
+          )
+        })
+        return
+      }
+      if (result.error && !result.ran) {
+        showDialogModal({
+          showDialog: true,
+          type: result.skippedReason === 'no-match' ? 'MESSAGE' : 'ERROR',
+          title: t('collection.ludusavi.backup', 'Ludusavi save backup'),
+          message: result.error
+        })
+        return
+      }
+      const backupPath = result.backupPath
+      showDialogModal({
+        showDialog: true,
+        type: 'MESSAGE',
+        title: t('collection.ludusavi.backup', 'Ludusavi save backup'),
+        message: backupPath
+          ? t(
+              'collection.ludusavi.donePath',
+              'Saved a Ludusavi backup for {{title}} in {{path}}.',
+              { title: result.gameName || title, path: backupPath }
+            )
+          : t(
+              'collection.ludusavi.done',
+              'Saved a Ludusavi backup for {{title}}.',
+              { title: result.gameName || title }
+            ),
+        buttons: backupPath
+          ? [
+              {
+                text: t('box.show-in-folder', 'Show in folder'),
+                onClick: () => window.api.showItemInFolder(backupPath)
+              },
+              { text: t('box.close', 'Close') }
+            ]
+          : undefined
+      })
+    } catch (error) {
+      showDialogModal({
+        showDialog: true,
+        type: 'ERROR',
+        title: t('collection.ludusavi.backup', 'Ludusavi save backup'),
+        message: String(error)
+      })
+    }
   }
 
   async function openSteamFromCollection(action: 'install' | 'uninstall') {
@@ -495,6 +584,12 @@ export default function CollectionCard({
             onclick: () => void window.api.removeRecentGame(appName),
             show: isRecent,
             icon: <PlaylistRemove />
+          },
+          {
+            label: t('collection.ludusavi.backup', 'Backup save (Ludusavi)'),
+            onclick: () => void handleLudusaviBackup(),
+            show: true,
+            icon: <Save />
           },
           {
             label: t('button.uninstall'),
