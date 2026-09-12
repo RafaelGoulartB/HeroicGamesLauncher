@@ -252,6 +252,8 @@ interface AsyncIPCFunctions {
   upsertCompletionStatus: (
     status: CompletionStatus
   ) => Promise<CompletionStatus[]>
+  deleteCompletionStatus: (id: string) => Promise<CompletionStatus[]>
+  reorderCompletionStatuses: (ids: string[]) => Promise<CompletionStatus[]>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

@@ -61,19 +61,6 @@
   min-width: 180px;
 }
 
-.collection__addStatus {
-  display: flex;
-  gap: var(--space-3xs);
-}
-
-.collection__addStatus input {
-  background: var(--input-background, var(--background-darker));
-  border: 1px solid var(--background-darker);
-  color: var(--text-default);
-  padding: var(--space-2xs) var(--space-xs);
-  border-radius: var(--space-3xs);
-}
-
 .collection__body {
   padding: 0 var(--space-md-fixed) var(--space-3xl);
 }

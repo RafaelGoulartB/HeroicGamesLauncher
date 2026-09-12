@@ -108,14 +108,6 @@ export function ensureDefaultStatuses(): CompletionStatus[] {
     statusFile.set('statuses', DEFAULT_STATUSES)
     return DEFAULT_STATUSES
   }
-
-  const known = new Set(current.map((item) => item.slug))
-  const missing = DEFAULT_STATUSES.filter((item) => !known.has(item.slug))
-  if (missing.length) {
-    const next = [...current, ...missing]
-    statusFile.set('statuses', next)
-    return next
-  }
   return current
 }
 
@@ -130,6 +122,51 @@ export function upsertCompletionStatus(
     statuses.push(status)
   }
   statusFile.set('statuses', statuses)
+  return getCompletionStatuses()
+}
+
+export function deleteCompletionStatus(id: string): CompletionStatus[] {
+  const statuses = getCompletionStatuses()
+  if (statuses.length <= 1) return statuses
+
+  const fallback =
+    statuses.find((item) => item.id !== id && item.slug === 'not-played')?.id ??
+    statuses.find((item) => item.id !== id)?.id
+  if (!fallback) return statuses
+
+  statusFile.set(
+    'statuses',
+    statuses.filter((item) => item.id !== id)
+  )
+
+  for (const meta of Object.values(getAllLocalGameMeta())) {
+    if (meta.completionStatusId === id) {
+      upsertLocalGameMeta({ ...meta, completionStatusId: fallback })
+    }
+  }
+
+  return getCompletionStatuses()
+}
+
+export function reorderCompletionStatuses(ids: string[]): CompletionStatus[] {
+  const statuses = getCompletionStatuses()
+  const byId = new Map(statuses.map((item) => [item.id, item]))
+  const next: CompletionStatus[] = []
+  const seen = new Set<string>()
+
+  for (const id of ids) {
+    const item = byId.get(id)
+    if (!item || seen.has(id)) continue
+    seen.add(id)
+    next.push({ ...item, sortOrder: (next.length + 1) * 10 })
+  }
+
+  for (const item of statuses) {
+    if (seen.has(item.id)) continue
+    next.push({ ...item, sortOrder: (next.length + 1) * 10 })
+  }
+
+  statusFile.set('statuses', next)
   return getCompletionStatuses()
 }
 
@@ -194,11 +231,21 @@ export function statusIdForPlaynite(
     )
     if (match) return match.id
   }
-  return 'not-played'
+  return fallbackStatusId('not-played')
+}
+
+function fallbackStatusId(preferredSlug: CompletionStatusSlug): string {
+  const statuses = getCompletionStatuses()
+  return (
+    statuses.find((item) => item.slug === preferredSlug)?.id ??
+    statuses.find((item) => item.id === preferredSlug)?.id ??
+    statuses[0]?.id ??
+    preferredSlug
+  )
 }
 
 export function inferredStatusId(playtimeMinutes: number): string {
-  return playtimeMinutes > 0 ? 'played' : 'not-played'
+  return fallbackStatusId(playtimeMinutes > 0 ? 'played' : 'not-played')
 }
 
 export function mergeGameCompletionStatus(

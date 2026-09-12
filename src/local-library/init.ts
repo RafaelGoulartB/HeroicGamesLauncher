@@ -9,8 +9,10 @@ import { refreshLocalInstallStates } from './install-state'
 import {
   backfillMissingGameStatuses,
   ensureDefaultStatuses,
+  deleteCompletionStatus,
   getCompletionStatuses,
   getLastPlayniteLibraryPath,
+  reorderCompletionStatuses,
   setGameCompletionStatus,
   upsertCompletionStatus
 } from './status'
@@ -44,6 +46,10 @@ export function registerLocalLibraryIpc() {
   })
   addHandler('upsertCompletionStatus', (_e, status) =>
     upsertCompletionStatus(status)
+  )
+  addHandler('deleteCompletionStatus', (_e, id) => deleteCompletionStatus(id))
+  addHandler('reorderCompletionStatuses', (_e, ids) =>
+    reorderCompletionStatuses(ids)
   )
 }
 

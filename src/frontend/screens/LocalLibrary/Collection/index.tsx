@@ -17,16 +17,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { GameInfo } from 'common/types'
 import type {
   CompletionStatus,
-  CompletionStatusSlug,
   LocalGameMeta
 } from 'common/types/local-library'
 import ContextProvider from 'frontend/state/ContextProvider'
-import { ToggleSwitch } from 'frontend/components/UI'
 import SearchBar from 'frontend/components/UI/SearchBar'
 import FormControl from 'frontend/components/UI/FormControl'
 import { configStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
 import PlayniteMenu from './PlayniteMenu'
+import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
 import './index.css'
 
@@ -40,7 +39,11 @@ function slugForMeta(
   statuses: CompletionStatus[]
 ): string {
   if (meta?.completionStatusId) return meta.completionStatusId
-  return statuses.find((item) => item.slug === 'not-played')?.id ?? 'not-played'
+  return (
+    statuses.find((item) => item.slug === 'not-played')?.id ??
+    statuses[0]?.id ??
+    'not-played'
+  )
 }
 
 function readInstallFilter(): InstallFilter {
@@ -61,7 +64,6 @@ export default function Collection() {
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
-  const [newStatusName, setNewStatusName] = useState('')
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -192,20 +194,6 @@ export default function Collection() {
     }
   }
 
-  async function handleAddStatus() {
-    const name = newStatusName.trim()
-    if (!name) return
-    const id = `custom_${Date.now()}`
-    const next = await window.api.localLibrary.upsertStatus({
-      id,
-      name,
-      slug: 'custom' as CompletionStatusSlug,
-      sortOrder: 100 + statuses.length
-    })
-    setStatuses(next)
-    setNewStatusName('')
-  }
-
   function renderCards(list: GameInfo[]) {
     return list.map((game) => (
       <CollectionCard
@@ -275,23 +263,12 @@ export default function Collection() {
               />
             </button>
           </FormControl>
-          <ToggleSwitch
-            htmlId="collection-group-status"
-            value={groupByStatus}
-            handleChange={() => setGroupByStatus((value) => !value)}
-            title={t('collection.group', 'Group by status')}
-          />
           <PlayniteMenu onLibraryChanged={() => void reload()} />
-          <div className="collection__addStatus">
-            <input
-              value={newStatusName}
-              onChange={(event) => setNewStatusName(event.target.value)}
-              placeholder={t('collection.newStatus', 'New status')}
-            />
-            <button className="button" onClick={() => void handleAddStatus()}>
-              {t('collection.addStatus', 'Add')}
-            </button>
-          </div>
+          <StatusMenu
+            groupByStatus={groupByStatus}
+            onGroupByStatusChange={setGroupByStatus}
+            onStatusesChanged={() => void reload()}
+          />
         </div>
       </header>
 

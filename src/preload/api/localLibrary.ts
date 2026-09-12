@@ -10,5 +10,7 @@ export const localLibrary = {
   getAllMeta: makeHandlerInvoker('getAllLocalGameMeta'),
   getStatuses: makeHandlerInvoker('getCompletionStatuses'),
   setStatus: makeHandlerInvoker('setGameCompletionStatus'),
-  upsertStatus: makeHandlerInvoker('upsertCompletionStatus')
+  upsertStatus: makeHandlerInvoker('upsertCompletionStatus'),
+  deleteStatus: makeHandlerInvoker('deleteCompletionStatus'),
+  reorderStatuses: makeHandlerInvoker('reorderCompletionStatuses')
 }
