@@ -22,11 +22,34 @@
   color: var(--text-secondary);
 }
 
+.collection__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 .collection__title {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   margin: 0;
+}
+
+.App.collectionSidebarHidden {
+  grid-template-columns: 0px 1fr;
+}
+
+.App.collectionSidebarHidden .Sidebar {
+  display: none;
+}
+
+.App.collectionSidebarHidden .collection__header {
+  -webkit-app-region: drag;
+}
+
+.App.collectionSidebarHidden .collection__header button,
+.App.collectionSidebarHidden .collection__controls {
+  -webkit-app-region: no-drag;
 }
 
 .collection__group h5 {

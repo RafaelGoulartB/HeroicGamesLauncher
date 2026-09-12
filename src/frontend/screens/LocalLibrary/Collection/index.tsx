@@ -14,7 +14,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { faHardDrive as hardDriveLight } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Settings } from '@mui/icons-material'
+import { Menu, MenuOpen, Settings } from '@mui/icons-material'
 import type { GameInfo } from 'common/types'
 import type {
   CompletionStatus,
@@ -36,7 +36,9 @@ type InstallFilter = 'all' | 'installed' | 'uninstalled'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
 const SORT_KEY = 'collection_sort'
+const SIDEBAR_HIDDEN_KEY = 'collection_sidebar_hidden'
 const storage: Storage = window.localStorage
+const SIDEBAR_HIDDEN_CLASS = 'collectionSidebarHidden'
 
 function slugForMeta(
   meta: LocalGameMeta | undefined,
@@ -66,6 +68,14 @@ function readSort(): CollectionSort {
   return 'title'
 }
 
+function readSidebarHidden(): boolean {
+  return storage.getItem(SIDEBAR_HIDDEN_KEY) === '1'
+}
+
+function applySidebarHidden(hidden: boolean) {
+  document.getElementById('app')?.classList.toggle(SIDEBAR_HIDDEN_CLASS, hidden)
+}
+
 function playtimeMinutes(appName: string): number {
   return timestampStore.get_nodefault(appName)?.totalPlayed ?? 0
 }
@@ -86,6 +96,7 @@ export default function Collection() {
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -117,6 +128,17 @@ export default function Collection() {
   useEffect(() => {
     void reload()
   }, [])
+
+  useEffect(() => {
+    applySidebarHidden(sidebarHidden)
+    return () => applySidebarHidden(false)
+  }, [sidebarHidden])
+
+  function handleSidebarToggle() {
+    const next = !sidebarHidden
+    storage.setItem(SIDEBAR_HIDDEN_KEY, next ? '1' : '0')
+    setSidebarHidden(next)
+  }
 
   useEffect(() => {
     const loadRecent = () => {
@@ -255,10 +277,30 @@ export default function Collection() {
   return (
     <div className={classNames('collection', { allTilesInColor })}>
       <header className="collection__header">
-        <h5 className="collection__title">
-          {t('collection.title', 'Collection')}
-          <span className="collection__count">{filtered.length}</span>
-        </h5>
+        <div className="collection__heading">
+          <button
+            type="button"
+            className="collection__iconBtn"
+            title={
+              sidebarHidden
+                ? t('collection.sidebar.show', 'Show sidebar')
+                : t('collection.sidebar.hide', 'Hide sidebar')
+            }
+            aria-label={
+              sidebarHidden
+                ? t('collection.sidebar.show', 'Show sidebar')
+                : t('collection.sidebar.hide', 'Hide sidebar')
+            }
+            aria-pressed={sidebarHidden}
+            onClick={handleSidebarToggle}
+          >
+            {sidebarHidden ? <Menu /> : <MenuOpen />}
+          </button>
+          <h5 className="collection__title">
+            {t('collection.title', 'Collection')}
+            <span className="collection__count">{filtered.length}</span>
+          </h5>
+        </div>
         <div className="collection__controls">
           <div className="collection__search">
             <SearchBar

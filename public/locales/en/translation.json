@@ -282,7 +282,10 @@
             "ludusaviZip": "Zip",
             "title": "Collection settings"
         },
-        "sidebar": "Collection",
+        "sidebar": {
+            "hide": "Hide sidebar",
+            "show": "Show sidebar"
+        },
         "sort": {
             "lastPlayed": "Last played",
             "menu": "Sort",
