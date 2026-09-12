@@ -72,6 +72,12 @@ export interface PlayniteGame {
   developers: string[]
   gameActions: PlayniteGameAction[]
   roms: PlayniteRom[]
+  completionStatusId?: string
+}
+
+export interface PlayniteCompletionStatus {
+  id: string
+  name: string
 }
 
 export interface PlayniteActivitySession {
@@ -85,6 +91,7 @@ export interface PlayniteLibraryDump {
   playniteRoot: string
   games: PlayniteGame[]
   emulators: PlayniteEmulator[]
+  completionStatuses: PlayniteCompletionStatus[]
   sessionsByGameId: Record<string, PlayniteActivitySession[]>
 }
 
@@ -196,8 +203,18 @@ function parseGame(
       .map((item) => asDoc(item))
       .filter((item): item is BsonDocument => Boolean(item))
       .map(parseRom)
-      .filter((item): item is PlayniteRom => Boolean(item))
+      .filter((item): item is PlayniteRom => Boolean(item)),
+    completionStatusId: asGuid(doc.CompletionStatusId)
   }
+}
+
+function parseCompletionStatus(
+  doc: BsonDocument
+): PlayniteCompletionStatus | undefined {
+  const id = asGuid(doc._id) ?? asGuid(doc.Id)
+  const name = asString(doc.Name)
+  if (!id || !name) return undefined
+  return { id, name }
 }
 
 function resolvePlayniteRoot(libraryPath: string): string {
@@ -256,6 +273,10 @@ export function loadPlayniteLibrary(libraryPath: string): PlayniteLibraryDump {
 
   const playniteRoot = resolvePlayniteRoot(libraryPath)
 
+  const completionStatuses = readDb(libraryPath, 'completionstatuses.db')
+    .map(parseCompletionStatus)
+    .filter((item): item is PlayniteCompletionStatus => Boolean(item))
+
   return {
     libraryPath,
     playniteRoot,
@@ -263,6 +284,7 @@ export function loadPlayniteLibrary(libraryPath: string): PlayniteLibraryDump {
       .map((doc) => parseGame(doc, companies))
       .filter((item): item is PlayniteGame => Boolean(item)),
     emulators,
+    completionStatuses,
     sessionsByGameId: readGameActivity(playniteRoot)
   }
 }

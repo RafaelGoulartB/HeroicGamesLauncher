@@ -16,6 +16,27 @@ export type LocalGameSource =
 
 export type LocalSessionSource = 'playnite' | 'heroic'
 
+export type CompletionStatusSlug =
+  | 'playing'
+  | 'plan-to-play'
+  | 'on-hold'
+  | 'played'
+  | 'endless'
+  | 'beaten'
+  | 'completed'
+  | 'abandoned'
+  | 'not-played'
+  | 'custom'
+
+export interface CompletionStatus {
+  id: string
+  name: string
+  slug: CompletionStatusSlug
+  sortOrder: number
+  playniteId?: string
+  playniteIds?: string[]
+}
+
 export interface LocalGameRom {
   name?: string
   path: string
@@ -38,6 +59,8 @@ export interface LocalGameMeta {
   roms?: LocalGameRom[]
   emulatorName?: string
   notes?: string
+  completionStatusId?: string
+  playniteCompletionStatusId?: string
 }
 
 export interface LocalGameSession {

@@ -60,7 +60,8 @@ import type {
   PlayniteImportArgs,
   PlayniteImportPreview,
   PlayniteImportResult,
-  PlaynitePreviewArgs
+  PlaynitePreviewArgs,
+  CompletionStatus
 } from './local-library'
 
 // ts-prune-ignore-next
@@ -237,6 +238,18 @@ interface AsyncIPCFunctions {
   ) => Promise<PlayniteImportResult>
   getLocalGameSessions: (appName: string) => Promise<LocalGameSession[]>
   getLocalGameMeta: (appName: string) => Promise<LocalGameMeta | undefined>
+  getAllLocalGameMeta: () => Promise<Record<string, LocalGameMeta>>
+  getCompletionStatuses: () => Promise<CompletionStatus[]>
+  setGameCompletionStatus: (args: {
+    appName: string
+    statusId: string
+    runner?: LocalGameMeta['runner']
+    title?: string
+    playniteId?: string
+  }) => Promise<LocalGameMeta | undefined>
+  upsertCompletionStatus: (
+    status: CompletionStatus
+  ) => Promise<CompletionStatus[]>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

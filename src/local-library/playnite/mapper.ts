@@ -235,7 +235,8 @@ export function mapPlayniteGame(
     launcherArgs,
     roms: game.roms,
     emulatorName,
-    notes: game.notes
+    notes: game.notes,
+    playniteCompletionStatusId: game.completionStatusId
   }
 
   const gameInfo: GameInfo | undefined =

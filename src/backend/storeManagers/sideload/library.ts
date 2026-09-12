@@ -8,7 +8,11 @@ import { sendFrontendMessage } from 'backend/ipc'
 import { isMac } from 'backend/constants/environment'
 import { LibraryManager } from 'common/types/game_manager'
 import SideloadGame from './games'
-import { initLocalLibrary, refreshLocalInstallStates } from 'local-library'
+import {
+  initLocalLibrary,
+  refreshLocalInstallStates,
+  refreshMissingLocalCovers
+} from 'local-library'
 
 export default class SideloadLibraryManager implements LibraryManager {
   init = () => initLocalLibrary()
@@ -86,6 +90,7 @@ export default class SideloadLibraryManager implements LibraryManager {
 
   async refresh() {
     await refreshLocalInstallStates()
+    void refreshMissingLocalCovers()
     return null
   }
 

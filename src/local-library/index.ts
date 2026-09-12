@@ -1,4 +1,5 @@
 export { initLocalLibrary } from './init'
+export { refreshMissingLocalCovers } from './covers'
 export { refreshLocalInstallStates } from './install-state'
 export { recordLocalSession } from './sessions'
 export {

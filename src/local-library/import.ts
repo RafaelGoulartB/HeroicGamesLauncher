@@ -30,6 +30,12 @@ import {
   upsertLocalGameMeta
 } from './stores'
 import { findSteamBinary, isSteamAppInstalled } from './steam'
+import {
+  inferredStatusId,
+  mergePlayniteStatuses,
+  setLastPlayniteLibraryPath,
+  statusIdForPlaynite
+} from './status'
 
 function upsertSideloadGame(game: GameInfo) {
   const current = sideloadStore.get('games', [])
@@ -225,6 +231,8 @@ export async function importPlayniteLibrary(
   const dump = loadPlayniteLibrary(args.libraryPath)
   const driveMap: DriveRemap[] = args.driveMap ?? []
   const steamBin = await findSteamBinary()
+  mergePlayniteStatuses(dump.completionStatuses)
+  setLastPlayniteLibraryPath(dump.libraryPath)
 
   logInfo(
     `Importing Playnite library from ${args.libraryPath} (${dump.games.length} games)`,
@@ -237,6 +245,10 @@ export async function importPlayniteLibrary(
       const mapped = mapPlayniteGame(game, dump.emulators, sessions, driveMap)
       const destination = destinationFor(mapped)
       const existed = Boolean(findMetaByPlayniteId(game.id))
+
+      mapped.meta.completionStatusId = mapped.meta.playniteCompletionStatusId
+        ? statusIdForPlaynite(mapped.meta.playniteCompletionStatusId)
+        : inferredStatusId(mapped.playtimeMinutes)
 
       if (destination === 'skip') {
         result.skipped += 1
@@ -310,4 +322,23 @@ export async function importPlayniteLibrary(
 
   sendFrontendMessage('refreshLibrary', 'sideload')
   return result
+}
+
+export function syncPlayniteCompletionStatuses(libraryPath: string) {
+  if (!existsSync(join(libraryPath, 'games.db'))) return
+  const dump = loadPlayniteLibrary(libraryPath)
+  mergePlayniteStatuses(dump.completionStatuses)
+  setLastPlayniteLibraryPath(dump.libraryPath)
+
+  for (const game of dump.games) {
+    const meta = findMetaByPlayniteId(game.id)
+    if (!meta) continue
+    upsertLocalGameMeta({
+      ...meta,
+      playniteCompletionStatusId: game.completionStatusId,
+      completionStatusId: game.completionStatusId
+        ? statusIdForPlaynite(game.completionStatusId)
+        : inferredStatusId(Math.floor(game.playtimeSeconds / 60))
+    })
+  }
 }
