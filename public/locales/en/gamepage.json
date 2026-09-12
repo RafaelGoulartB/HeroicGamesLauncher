@@ -146,6 +146,8 @@
         "neverPlayed": "Never",
         "platform": "Select Platform Version to Install",
         "requirements": "System Requirements",
+        "sessionPlaynite": "Playnite",
+        "sessions": "Play sessions",
         "totalPlayed": "Time Played"
     },
     "gamecard": {
