@@ -283,13 +283,13 @@ export default function Collection() {
             className="collection__iconBtn"
             title={
               sidebarHidden
-                ? t('collection.sidebar.show', 'Show sidebar')
-                : t('collection.sidebar.hide', 'Hide sidebar')
+                ? t('collection.showSidebar', 'Show sidebar')
+                : t('collection.hideSidebar', 'Hide sidebar')
             }
             aria-label={
               sidebarHidden
-                ? t('collection.sidebar.show', 'Show sidebar')
-                : t('collection.sidebar.hide', 'Hide sidebar')
+                ? t('collection.showSidebar', 'Show sidebar')
+                : t('collection.hideSidebar', 'Hide sidebar')
             }
             aria-pressed={sidebarHidden}
             onClick={handleSidebarToggle}

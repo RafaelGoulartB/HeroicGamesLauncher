@@ -225,6 +225,7 @@
             "uninstalled": "Not installed / Uninstalled"
         },
         "group": "Group by status",
+        "hideSidebar": "Hide sidebar",
         "newStatus": "New status",
         "playnite": {
             "export": "Export for Playnite…",
@@ -282,10 +283,8 @@
             "ludusaviZip": "Zip",
             "title": "Collection settings"
         },
-        "sidebar": {
-            "hide": "Hide sidebar",
-            "show": "Show sidebar"
-        },
+        "showSidebar": "Show sidebar",
+        "sidebar": "Collection",
         "sort": {
             "lastPlayed": "Last played",
             "menu": "Sort",
