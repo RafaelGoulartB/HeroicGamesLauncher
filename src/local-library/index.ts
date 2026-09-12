@@ -6,6 +6,7 @@ export {
   isSteamUriGame,
   isSteamClientAvailable,
   isSteamAppInstalled,
-  tryLaunchLocalGame
+  tryLaunchLocalGame,
+  tryStopLocalGame
 } from './steam'
 export { getLocalGameMeta, getLocalSessions } from './stores'

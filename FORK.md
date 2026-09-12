@@ -17,7 +17,7 @@ out of Heroic's store architecture. The Local "store" is the existing
 | ----------------------------------------------------------------- | ---------------------------------------------- |
 | `src/common/types/ipc.ts`                                         | IPC methods for Playnite import / sessions     |
 | `src/backend/storeManagers/sideload/library.ts`                   | `init()` / `refresh()` → local install state   |
-| `src/backend/storeManagers/sideload/games.ts`                     | Steam URI availability + launch                |
+| `src/backend/storeManagers/sideload/games.ts`                     | Steam URI launch, wait for game, stop PID      |
 | `src/backend/launcher.ts`                                         | `recordLocalSession()` after playtime          |
 | `src/preload/api/index.ts`                                        | export `localLibrary`                          |
 | `src/frontend/screens/Library/components/LibraryHeader/index.tsx` | Import Playnite button                         |

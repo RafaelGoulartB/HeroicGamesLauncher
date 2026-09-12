@@ -23,7 +23,7 @@ export async function isSteamClientAvailable(): Promise<boolean> {
   return Boolean(await findSteamBinary())
 }
 
-async function steamLibraryRoots(): Promise<string[]> {
+export async function steamLibraryRoots(): Promise<string[]> {
   const { getSteamLibraries } = await import('backend/utils')
   const fromHeroic = await getSteamLibraries()
   const extras = [
@@ -70,6 +70,25 @@ export async function isSteamAppInstalled(appId: string): Promise<boolean> {
   return ids.has(appId)
 }
 
+export async function getSteamLogFiles(): Promise<string[]> {
+  const names = ['console_log.txt', 'console-linux.txt', 'console-windows.txt']
+  const dirs = new Set<string>()
+  for (const root of await steamLibraryRoots()) {
+    dirs.add(join(root, 'logs'))
+  }
+  dirs.add(join(homedir(), '.steam', 'steam', 'logs'))
+  dirs.add(join(homedir(), '.local', 'share', 'Steam', 'logs'))
+
+  const files: string[] = []
+  for (const dir of dirs) {
+    for (const name of names) {
+      const file = join(dir, name)
+      if (existsSync(file)) files.push(file)
+    }
+  }
+  return [...new Set(files)]
+}
+
 export function isSteamUriGame(appName: string): boolean {
   const meta = getLocalGameMeta(appName)
   return meta?.launchKind === 'steam-uri' && Boolean(meta.steamAppId)
@@ -110,5 +129,43 @@ export async function tryLaunchLocalGame(
     }
   )
 
-  return !result.error && !result.abort
+  if (result.error || result.abort) {
+    return !result.error && !result.abort
+  }
+
+  const { sendGameStatusUpdate } = await import('backend/utils')
+  sendGameStatusUpdate({
+    appName: gameInfo.app_name,
+    runner: 'sideload',
+    status: 'playing'
+  })
+
+  const {
+    createAbortController,
+    deleteAbortController
+  } = await import('backend/utils/aborthandler/aborthandler')
+  const { waitForSteamSession } = await import('./playtime-watch')
+
+  const abortController = createAbortController(gameInfo.app_name)
+  try {
+    await waitForSteamSession({
+      appName: gameInfo.app_name,
+      steamAppId: meta.steamAppId,
+      signal: abortController.signal,
+      title: gameInfo.title,
+      logFiles: await getSteamLogFiles(),
+      resolveLogFiles: getSteamLogFiles
+    })
+  } finally {
+    deleteAbortController(gameInfo.app_name)
+  }
+
+  return true
+}
+
+export async function tryStopLocalGame(appName: string): Promise<boolean> {
+  if (!isSteamUriGame(appName)) return false
+  const { stopLocalPlaytimeWatch } = await import('./playtime-watch')
+  stopLocalPlaytimeWatch(appName)
+  return true
 }

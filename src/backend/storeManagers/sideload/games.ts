@@ -101,6 +101,11 @@ export default class SideloadGame implements Game {
   }
 
   async stop(): Promise<void> {
+    const { tryStopLocalGame } = await import('local-library')
+    if (await tryStopLocalGame(this.id)) {
+      return
+    }
+
     const {
       install: { executable = undefined }
     } = this.getGameInfo()
