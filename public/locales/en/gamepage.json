@@ -99,6 +99,9 @@
         "update": "Update"
     },
     "cloud_save_unsupported": "Unsupported",
+    "collection": {
+        "tracking": "Counting playtime"
+    },
     "disabled": "Disabled",
     "edit-game": {
         "advanced": "Advanced",
