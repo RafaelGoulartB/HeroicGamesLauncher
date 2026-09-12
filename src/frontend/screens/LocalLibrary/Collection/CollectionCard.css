@@ -71,23 +71,35 @@
   pointer-events: none;
 }
 
-.collectionCard__title {
+.collectionCard__bar {
   position: absolute;
-  width: 100%;
+  left: 0;
+  right: 0;
   bottom: 0;
-  padding: 0.6rem 0.3rem;
-  color: var(--text-secondary);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0.5rem 0.4rem 0.5rem 0.5rem;
   background: var(--gamecard-title-color);
+  transform: translateY(100%);
   transition: 200ms;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.collectionCard:hover .collectionCard__bar {
+  transform: translateY(0);
+}
+
+.collectionCard__title {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
   font-family: var(--primary-font-family);
   font-size: var(--text-md);
   font-weight: var(--bold);
   line-height: 17px;
-  cursor: pointer;
-  z-index: 3;
-  pointer-events: none;
-  transform: translateY(100%);
-  box-sizing: border-box;
 }
 
 .collectionCard__title span {
@@ -97,7 +109,87 @@
   overflow: hidden;
 }
 
-.collectionCard:hover .collectionCard__title {
+.collectionCard__playBtn {
+  flex-shrink: 0;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+}
+
+.collectionCard__playBtn svg {
+  width: 28px;
+  height: 28px;
   display: block;
-  transform: translateY(0);
+}
+
+.collectionCard__playBtn.play circle {
+  fill: var(--success);
+}
+
+.collectionCard__playBtn.play:hover circle {
+  fill: var(--success-hover);
+}
+
+.collectionCard__playBtn.install circle {
+  fill: var(--accent);
+}
+
+.collectionCard__playBtn.install:hover circle {
+  fill: var(--accent-overlay);
+}
+
+.collectionCard__playBtn.cancel svg circle {
+  fill: var(--cancel-button, var(--warning));
+}
+
+.collectionCard__playBtn.cancel:hover svg circle {
+  fill: var(--cancel-button-overlay, var(--warning-hover));
+}
+
+.collectionCard__playBtn[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.collectionCard.is-playing {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 16px 2px rgba(0, 0, 0, 0.45);
+}
+
+.collectionCard.is-playing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  animation: collectionPlayingPulse 2.4s ease-in-out infinite;
+  z-index: 6;
+}
+
+.collectionCard__playtime.is-playing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-default);
+}
+
+.collectionCard__liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success, #3ecf8e);
+  box-shadow: 0 0 6px var(--success, #3ecf8e);
+  animation: collectionPlayingPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes collectionPlayingPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
 }

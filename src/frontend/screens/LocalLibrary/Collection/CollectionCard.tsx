@@ -30,7 +30,7 @@ import type {
   CompletionStatus,
   LocalGameMeta
 } from 'common/types/local-library'
-import { CachedImage } from 'frontend/components/UI'
+import { CachedImage, SvgButton } from 'frontend/components/UI'
 import UninstallModal from 'frontend/components/UI/UninstallModal'
 import EditGameDialog from 'frontend/components/UI/EditGameDialog'
 import ContextProvider from 'frontend/state/ContextProvider'
@@ -48,6 +48,9 @@ import { updateGame } from 'frontend/helpers/library'
 import { hasProgress } from 'frontend/hooks/hasProgress'
 import { hasStatus } from 'frontend/hooks/hasStatus'
 import fallBackImage from 'frontend/assets/heroic_card.jpg'
+import PlayIcon from 'frontend/assets/play-icon.svg?react'
+import StopIconAlt from 'frontend/assets/stop-icon-alt.svg?react'
+import DownIcon from 'frontend/assets/down-icon.svg?react'
 import {
   getCardStatus,
   getImageFormatting
@@ -111,7 +114,6 @@ export default function CollectionCard({
   const completion =
     statuses.find((item) => item.id === currentStatusId) ??
     statuses.find((item) => item.id === 'not-played')
-  const playtime = timestampStore.get_nodefault(appName)?.totalPlayed
   const isInstallable =
     gameInfo.installable === undefined || gameInfo.installable
   const [progress, previousProgress] = hasProgress(appName, runner)
@@ -119,11 +121,16 @@ export default function CollectionCard({
   const { status, folder } = hasStatus(gameInfo, size)
   const isBrowserGame = gameInfo.install.platform === 'Browser'
   const hasUpdate = Boolean(isInstalled && gameUpdates?.includes(appName))
-  const { isInstalling, isUninstalling, isQueued, isPlaying, isUpdating } =
+  const { isInstalling, isUninstalling, isQueued, isPlaying, isUpdating, isLaunching } =
     getCardStatus(status, isInstalled, 'grid')
+  const isTrackingTime = isPlaying || isLaunching
   const installingGrayscale = isInstalling
     ? `${125 - getProgress(progress)}%`
     : '100%'
+  const [playedMinutes, setPlayedMinutes] = useState(
+    () => timestampStore.get_nodefault(appName)?.totalPlayed
+  )
+  const [liveExtraMinutes, setLiveExtraMinutes] = useState(0)
 
   useEffect(() => {
     const callback = (e: CustomEvent<{ appNames: string[] }>) => {
@@ -141,11 +148,25 @@ export default function CollectionCard({
       if (newInfo) setGameInfo(newInfo)
     }
     void updateInfo()
-  }, [status, appName, runner])
+    setPlayedMinutes(timestampStore.get_nodefault(appName)?.totalPlayed)
+  }, [status, appName, runner, isTrackingTime])
+
+  useEffect(() => {
+    if (!isTrackingTime) {
+      setLiveExtraMinutes(0)
+      return
+    }
+    const startedAt = Date.now()
+    const tick = () =>
+      setLiveExtraMinutes(Math.floor((Date.now() - startedAt) / 60000))
+    tick()
+    const timer = window.setInterval(tick, 15000)
+    return () => window.clearInterval(timer)
+  }, [isTrackingTime, appName])
 
   const playtimeLabel = useMemo(
-    () => formatPlaytimeMinutes(playtime),
-    [playtime]
+    () => formatPlaytimeMinutes((playedMinutes ?? 0) + liveExtraMinutes),
+    [playedMinutes, liveExtraMinutes]
   )
 
   const isHiddenGame = Boolean(
@@ -219,7 +240,78 @@ export default function CollectionCard({
     }
   }
 
-  if (!visible) {
+  function hoverPlayButton() {
+    if (!isInstallable) return null
+
+    if (isPlaying || isUpdating) {
+      return (
+        <SvgButton
+          className="collectionCard__playBtn cancel"
+          title={`${t('label.playing.stop')} (${title})`}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            void handlePlay(runner)
+          }}
+        >
+          <StopIconAlt />
+        </SvgButton>
+      )
+    }
+
+    if (isInstalling) {
+      return (
+        <SvgButton
+          className="collectionCard__playBtn cancel"
+          title={`${t('button.cancel')} (${title})`}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            void handlePlay(runner)
+          }}
+        >
+          <StopIconAlt />
+        </SvgButton>
+      )
+    }
+
+    if (isInstalled) {
+      return (
+        <SvgButton
+          className="collectionCard__playBtn play"
+          title={`${t('label.playing.start')} (${title})`}
+          disabled={isLaunching}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            void handlePlay(runner)
+          }}
+        >
+          <PlayIcon />
+        </SvgButton>
+      )
+    }
+
+    if (!isQueued) {
+      return (
+        <SvgButton
+          className="collectionCard__playBtn install"
+          title={`${t('button.install')} (${title})`}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            openInstallGameModal({ appName, runner, gameInfo })
+          }}
+        >
+          <DownIcon />
+        </SvgButton>
+      )
+    }
+
+    return null
+  }
+
+  if (!visible && !isTrackingTime) {
     return (
       <div
         className="collectionCard"
@@ -358,7 +450,10 @@ export default function CollectionCard({
         ]}
       >
         <div
-          className={classNames('collectionCard', { installed: isInstalled })}
+          className={classNames('collectionCard', {
+            installed: isInstalled,
+            'is-playing': isTrackingTime
+          })}
         >
           <Link
             className="collectionCard__link"
@@ -375,7 +470,19 @@ export default function CollectionCard({
               })}
               alt={title}
             />
-            <span className="collectionCard__playtime">{playtimeLabel}</span>
+            <span
+              className={classNames('collectionCard__playtime', {
+                'is-playing': isTrackingTime
+              })}
+              title={
+                isTrackingTime
+                  ? t('collection.tracking', 'Counting playtime')
+                  : undefined
+              }
+            >
+              {isTrackingTime && <span className="collectionCard__liveDot" />}
+              {playtimeLabel}
+            </span>
             {completion && (
               <span
                 className="collectionCard__statusDot"
@@ -383,10 +490,13 @@ export default function CollectionCard({
                 title={completion.name}
               />
             )}
+          </Link>
+          <div className="collectionCard__bar">
             <span className="collectionCard__title">
               <span>{title}</span>
             </span>
-          </Link>
+            {hoverPlayButton()}
+          </div>
         </div>
       </CollectionContextMenu>
     </>
