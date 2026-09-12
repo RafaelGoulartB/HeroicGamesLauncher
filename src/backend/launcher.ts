@@ -275,6 +275,13 @@ const launchEventCallback: (args: LaunchParams) => StatusPromise = async ({
     sessionPlaytime + tsStore.get(`${appName}.totalPlayed`, 0)
   tsStore.set(`${appName}.totalPlayed`, Math.floor(totalPlaytime))
 
+  const { recordLocalSession } = await import('local-library')
+  recordLocalSession({
+    appName,
+    startedAt: startPlayingDate,
+    endedAt: finishedPlayingDate
+  })
+
   const { disablePlaytimeSync } = GlobalConfig.get().getSettings()
   if (runner === 'gog') {
     if (!disablePlaytimeSync) {

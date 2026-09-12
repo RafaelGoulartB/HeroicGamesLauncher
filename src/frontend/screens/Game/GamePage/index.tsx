@@ -37,6 +37,7 @@ import {
 
 import GamePicture from '../GamePicture'
 import TimeContainer from '../TimeContainer'
+import SessionHistory from 'frontend/screens/LocalLibrary/SessionHistory'
 
 import { install } from 'frontend/helpers/library'
 import { hasProgress } from 'frontend/hooks/hasProgress'
@@ -459,6 +460,9 @@ export default React.memo(function GamePage(): JSX.Element | null {
 
                       <Description />
                       {!notInstallable && <TimeContainer gameInfo={gameInfo} />}
+                      {!notInstallable && (
+                        <SessionHistory gameInfo={gameInfo} />
+                      )}
                       <GameStatus
                         gameInfo={gameInfo}
                         progress={progress}
