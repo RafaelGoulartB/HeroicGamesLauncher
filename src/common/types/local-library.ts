@@ -128,3 +128,63 @@ export interface PlayniteImportResult {
   sessionsImported: number
   errors: string[]
 }
+
+export interface PlayniteMergePreviewItem {
+  title: string
+  playniteId: string
+  heroicMinutes?: number
+  playniteMinutes?: number
+  heroicStatus?: string
+  playniteStatus?: string
+}
+
+export interface PlayniteMergePreview {
+  libraryPath: string
+  newGames: PlayniteMergePreviewItem[]
+  playtimeUpdates: PlayniteMergePreviewItem[]
+  statusFromPlaynite: PlayniteMergePreviewItem[]
+  statusConflicts: PlayniteMergePreviewItem[]
+  newSessions: number
+  unchanged: number
+  skipped: number
+  errors: string[]
+}
+
+export interface PlayniteExportGame {
+  playniteId: string
+  heroicAppName: string
+  steamAppId?: string
+  storeGameId?: string
+  title: string
+  source: LocalGameSource
+  playtimeMinutes: number
+  playtimeSeconds: number
+  firstPlayed?: string
+  lastPlayed?: string
+  completionStatus: {
+    id: string
+    name: string
+    slug: CompletionStatusSlug
+    playniteId?: string
+  }
+  lastPlayniteCompletionStatusId?: string
+  sessions: LocalGameSession[]
+}
+
+export interface PlayniteExportFile {
+  format: 'heroic-playnite-export'
+  version: 1
+  exportedAt: string
+  comment: string
+  statuses: CompletionStatus[]
+  games: PlayniteExportGame[]
+}
+
+export interface PlayniteExportResult {
+  path: string
+  gameCount: number
+}
+
+export type SteamClientUriAction = 'install' | 'uninstall'
+
+export type SteamClientUriResult = { ok: true } | { ok: false; error: string }

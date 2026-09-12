@@ -70,6 +70,19 @@ export function replaceLocalSessions(
   sessionFile.set('sessions', all)
 }
 
+export function countNewLocalSessions(
+  appName: string,
+  incoming: LocalGameSession[]
+): number {
+  const existing = sessionFile.get('sessions')[appName] ?? []
+  const keys = new Set(
+    existing.map((session) => `${session.startedAt}:${session.elapsedSeconds}`)
+  )
+  return incoming.filter(
+    (session) => !keys.has(`${session.startedAt}:${session.elapsedSeconds}`)
+  ).length
+}
+
 export function mergeLocalSessions(
   appName: string,
   incoming: LocalGameSession[]

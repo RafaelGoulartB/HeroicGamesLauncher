@@ -60,8 +60,12 @@ import type {
   PlayniteImportArgs,
   PlayniteImportPreview,
   PlayniteImportResult,
+  PlayniteMergePreview,
+  PlayniteExportResult,
   PlaynitePreviewArgs,
-  CompletionStatus
+  CompletionStatus,
+  SteamClientUriAction,
+  SteamClientUriResult
 } from './local-library'
 
 // ts-prune-ignore-next
@@ -237,6 +241,8 @@ interface AsyncIPCFunctions {
     args: PlayniteImportArgs
   ) => Promise<PlayniteImportResult>
   mergePlayniteLibrary: () => Promise<PlayniteImportResult>
+  previewPlayniteMerge: () => Promise<PlayniteMergePreview>
+  exportPlayniteLibrary: (targetPath: string) => Promise<PlayniteExportResult>
   getLastPlayniteLibraryPath: () => Promise<string | undefined>
   getLocalGameSessions: (appName: string) => Promise<LocalGameSession[]>
   getLocalGameMeta: (appName: string) => Promise<LocalGameMeta | undefined>
@@ -254,6 +260,10 @@ interface AsyncIPCFunctions {
   ) => Promise<CompletionStatus[]>
   deleteCompletionStatus: (id: string) => Promise<CompletionStatus[]>
   reorderCompletionStatuses: (ids: string[]) => Promise<CompletionStatus[]>
+  openSteamClientUri: (args: {
+    action: SteamClientUriAction
+    steamAppId: string
+  }) => Promise<SteamClientUriResult>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

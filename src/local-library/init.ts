@@ -3,9 +3,12 @@ import { refreshMissingLocalCovers } from './covers'
 import {
   importPlayniteLibrary,
   mergePlayniteLibrary,
-  previewPlayniteImport
+  previewPlayniteImport,
+  previewPlayniteMerge
 } from './import'
+import { exportPlayniteLibrary } from './export'
 import { refreshLocalInstallStates } from './install-state'
+import { openSteamClientUri } from './steam'
 import {
   backfillMissingGameStatuses,
   ensureDefaultStatuses,
@@ -31,6 +34,10 @@ export function registerLocalLibraryIpc() {
   addHandler('previewPlayniteImport', (_e, args) => previewPlayniteImport(args))
   addHandler('importPlayniteLibrary', (_e, args) => importPlayniteLibrary(args))
   addHandler('mergePlayniteLibrary', () => mergePlayniteLibrary())
+  addHandler('previewPlayniteMerge', () => previewPlayniteMerge())
+  addHandler('exportPlayniteLibrary', (_e, targetPath) =>
+    exportPlayniteLibrary(targetPath)
+  )
   addHandler('getLastPlayniteLibraryPath', () => getLastPlayniteLibraryPath())
   addHandler('getLocalGameSessions', (_e, appName) => getLocalSessions(appName))
   addHandler('getLocalGameMeta', (_e, appName) => getLocalGameMeta(appName))
@@ -50,6 +57,9 @@ export function registerLocalLibraryIpc() {
   addHandler('deleteCompletionStatus', (_e, id) => deleteCompletionStatus(id))
   addHandler('reorderCompletionStatuses', (_e, ids) =>
     reorderCompletionStatuses(ids)
+  )
+  addHandler('openSteamClientUri', (_e, args) =>
+    openSteamClientUri(args.action, args.steamAppId)
   )
 }
 

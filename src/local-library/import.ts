@@ -14,6 +14,7 @@ import type {
   PlayniteImportArgs,
   PlayniteImportPreview,
   PlayniteImportResult,
+  PlayniteMergePreview,
   PlaynitePreviewArgs
 } from 'common/types/local-library'
 import { fetchCoversForGame } from './covers'
@@ -27,6 +28,7 @@ import { collectWindowsDrives } from './playnite/path-remap'
 import { loadPlayniteLibrary, PlayniteGame } from './playnite/reader'
 import {
   findMetaByPlayniteId,
+  countNewLocalSessions,
   mergeLocalSessions,
   upsertLocalGameMeta
 } from './stores'
@@ -39,7 +41,10 @@ import {
   setLastPlayniteDriveMap,
   statusIdForPlaynite,
   getLastPlayniteLibraryPath,
-  getLastPlayniteDriveMap
+  getLastPlayniteDriveMap,
+  getCompletionStatuses,
+  resolvePlayniteStatusId,
+  decideStatusMerge
 } from './status'
 
 function upsertSideloadGame(game: GameInfo) {
@@ -413,4 +418,119 @@ export async function mergePlayniteLibrary(): Promise<PlayniteImportResult> {
     fetchCovers: true,
     mergeExisting: true
   })
+}
+
+function emptyMergePreview(errors: string[]): PlayniteMergePreview {
+  return {
+    libraryPath: '',
+    newGames: [],
+    playtimeUpdates: [],
+    statusFromPlaynite: [],
+    statusConflicts: [],
+    newSessions: 0,
+    unchanged: 0,
+    skipped: 0,
+    errors
+  }
+}
+
+export function previewPlayniteMerge(): PlayniteMergePreview {
+  const libraryPath = getLastPlayniteLibraryPath()
+  if (!libraryPath || !existsSync(join(libraryPath, 'games.db'))) {
+    return emptyMergePreview([
+      'No Playnite library path is saved. Import a library first, then merge.'
+    ])
+  }
+
+  const dump = loadPlayniteLibrary(libraryPath)
+  const driveMap = getLastPlayniteDriveMap()
+  const statuses = getCompletionStatuses()
+  const nameOf = (id?: string) =>
+    statuses.find((item) => item.id === id)?.name ?? id ?? ''
+  const playniteName = (id?: string) =>
+    dump.completionStatuses.find((item) => item.id === id)?.name ?? nameOf(id)
+
+  const preview: PlayniteMergePreview = {
+    libraryPath,
+    newGames: [],
+    playtimeUpdates: [],
+    statusFromPlaynite: [],
+    statusConflicts: [],
+    newSessions: 0,
+    unchanged: 0,
+    skipped: 0,
+    errors: []
+  }
+
+  for (const game of dump.games) {
+    const sessions = playniteSessionsToLocal(game.id, dump.sessionsByGameId)
+    const mapped = mapPlayniteGame(game, dump.emulators, sessions, driveMap)
+    const destination = destinationFor(mapped)
+    const existed = findMetaByPlayniteId(game.id)
+
+    if (destination === 'skip' && !existed) {
+      preview.skipped += 1
+      continue
+    }
+
+    if (!existed) {
+      preview.newGames.push({
+        title: game.name,
+        playniteId: game.id,
+        playniteMinutes: mapped.playtimeMinutes,
+        playniteStatus: playniteName(mapped.meta.playniteCompletionStatusId)
+      })
+      preview.newSessions += sessions.length
+      continue
+    }
+
+    const currentMinutes =
+      tsStore.get_nodefault(existed.appName)?.totalPlayed ?? 0
+    const newSessions = countNewLocalSessions(existed.appName, mapped.sessions)
+    preview.newSessions += newSessions
+
+    const fromPlaynite = resolvePlayniteStatusId(
+      mapped.meta.playniteCompletionStatusId,
+      dump.completionStatuses
+    )
+    const decision = decideStatusMerge(
+      existed,
+      mapped.meta.playniteCompletionStatusId,
+      fromPlaynite
+    )
+
+    let changed = false
+    if (mapped.playtimeMinutes > currentMinutes) {
+      preview.playtimeUpdates.push({
+        title: game.name,
+        playniteId: game.id,
+        heroicMinutes: currentMinutes,
+        playniteMinutes: mapped.playtimeMinutes
+      })
+      changed = true
+    }
+
+    if (decision.decision === 'take-playnite') {
+      preview.statusFromPlaynite.push({
+        title: game.name,
+        playniteId: game.id,
+        heroicStatus: nameOf(existed.completionStatusId),
+        playniteStatus: playniteName(mapped.meta.playniteCompletionStatusId)
+      })
+      changed = true
+    } else if (decision.decision === 'conflict') {
+      preview.statusConflicts.push({
+        title: game.name,
+        playniteId: game.id,
+        heroicStatus: nameOf(existed.completionStatusId),
+        playniteStatus: playniteName(mapped.meta.playniteCompletionStatusId)
+      })
+      changed = true
+    }
+
+    if (newSessions) changed = true
+    if (!changed) preview.unchanged += 1
+  }
+
+  return preview
 }

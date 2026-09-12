@@ -6,6 +6,7 @@ export {
   isSteamUriGame,
   isSteamClientAvailable,
   isSteamAppInstalled,
+  openSteamClientUri,
   tryLaunchLocalGame,
   tryStopLocalGame
 } from './steam'

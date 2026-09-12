@@ -248,6 +248,63 @@ export function inferredStatusId(playtimeMinutes: number): string {
   return fallbackStatusId(playtimeMinutes > 0 ? 'played' : 'not-played')
 }
 
+export function resolvePlayniteStatusId(
+  playniteStatusId: string | undefined,
+  incoming?: Array<{ id: string; name: string }>
+): string {
+  if (!playniteStatusId) return fallbackStatusId('not-played')
+  const statuses = getCompletionStatuses()
+  const mapped = statuses.find(
+    (status) =>
+      status.playniteId === playniteStatusId ||
+      status.playniteIds?.includes(playniteStatusId)
+  )
+  if (mapped) return mapped.id
+
+  const incomingStatus = incoming?.find((item) => item.id === playniteStatusId)
+  if (incomingStatus) {
+    const slug = slugFromStatusName(incomingStatus.name)
+    if (slug !== 'custom') {
+      const bySlug = statuses.find((status) => status.slug === slug)
+      if (bySlug) return bySlug.id
+    }
+  }
+
+  return fallbackStatusId('not-played')
+}
+
+export type StatusMergeDecision = 'unchanged' | 'take-playnite' | 'conflict'
+
+export function decideStatusMerge(
+  meta: { completionStatusId?: string; playniteCompletionStatusId?: string },
+  playniteStatusId: string | undefined,
+  fromPlaynite: string
+): { statusId: string; decision: StatusMergeDecision } {
+  const heroic = meta.completionStatusId
+  if (!heroic) {
+    return { statusId: fromPlaynite, decision: 'take-playnite' }
+  }
+
+  if (playniteStatusId === meta.playniteCompletionStatusId) {
+    return { statusId: heroic, decision: 'unchanged' }
+  }
+
+  const lastImported = meta.playniteCompletionStatusId
+    ? statusIdForPlaynite(meta.playniteCompletionStatusId)
+    : undefined
+  if (heroic === lastImported) {
+    return {
+      statusId: fromPlaynite,
+      decision: fromPlaynite === heroic ? 'unchanged' : 'take-playnite'
+    }
+  }
+
+  return {
+    statusId: heroic,
+    decision: fromPlaynite === heroic ? 'unchanged' : 'conflict'
+  }
+}
+
 export function mergeGameCompletionStatus(
   meta: { completionStatusId?: string; playniteCompletionStatusId?: string },
   playniteStatusId: string | undefined,
@@ -256,19 +313,7 @@ export function mergeGameCompletionStatus(
   const fromPlaynite = playniteStatusId
     ? statusIdForPlaynite(playniteStatusId)
     : inferredStatusId(playtimeMinutes)
-  const heroic = meta.completionStatusId
-  if (!heroic) return fromPlaynite
-
-  if (playniteStatusId === meta.playniteCompletionStatusId) {
-    return heroic
-  }
-
-  const lastImported = meta.playniteCompletionStatusId
-    ? statusIdForPlaynite(meta.playniteCompletionStatusId)
-    : undefined
-  if (heroic === lastImported) return fromPlaynite
-
-  return heroic
+  return decideStatusMerge(meta, playniteStatusId, fromPlaynite).statusId
 }
 
 export function setGameCompletionStatus(
