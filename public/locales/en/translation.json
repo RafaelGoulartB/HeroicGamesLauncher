@@ -52,6 +52,7 @@
         "choose-gogdl-binary": "Select GOGDL Binary (needs restart)",
         "choose-legendary-binary": "Select Legendary binary",
         "choose-nile-binary": "Select Nile binary",
+        "close": "Close",
         "customWine": "Select the Wine or Proton binary",
         "default-install-path": "Choose Default Install Path",
         "default-steam-path": "Steam path.",
@@ -235,7 +236,14 @@
         },
         "sidebar": "Collection",
         "status": {
-            "label": "Status"
+            "label": "Status",
+            "manage": "Manage statuses…",
+            "manageHelp": "Rename, reorder, or remove statuses. Games on a removed status move to another one.",
+            "manageTitle": "Manage statuses",
+            "menu": "Status",
+            "moveDown": "Move down",
+            "moveUp": "Move up",
+            "remove": "Remove"
         },
         "title": "Collection",
         "ungrouped": "Other"
