@@ -26,6 +26,7 @@ import SearchBar from 'frontend/components/UI/SearchBar'
 import FormControl from 'frontend/components/UI/FormControl'
 import { configStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
+import PlayniteMenu from './PlayniteMenu'
 import { STATUS_COLORS } from './statusColors'
 import './index.css'
 
@@ -280,6 +281,7 @@ export default function Collection() {
             handleChange={() => setGroupByStatus((value) => !value)}
             title={t('collection.group', 'Group by status')}
           />
+          <PlayniteMenu onLibraryChanged={() => void reload()} />
           <div className="collection__addStatus">
             <input
               value={newStatusName}
