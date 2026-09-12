@@ -68,7 +68,9 @@ import type {
   SteamClientUriResult,
   CollectionBackupInterval,
   CollectionBackupResult,
-  CollectionSettings
+  CollectionSettings,
+  LudusaviBackupResult,
+  LudusaviSettings
 } from './local-library'
 
 // ts-prune-ignore-next
@@ -273,6 +275,26 @@ interface AsyncIPCFunctions {
     interval: CollectionBackupInterval
   }) => Promise<CollectionSettings>
   runCollectionBackup: (force?: boolean) => Promise<CollectionBackupResult>
+  setLudusaviSettings: (
+    args: Partial<
+      Pick<
+        LudusaviSettings,
+        | 'enabled'
+        | 'useInstalledConfig'
+        | 'binaryPath'
+        | 'backupPath'
+        | 'format'
+        | 'compression'
+      >
+    >
+  ) => Promise<CollectionSettings>
+  runLudusaviBackup: (args: {
+    appName: string
+    title: string
+    runner: Runner
+    steamAppId?: string
+    storeGameId?: string
+  }) => Promise<LudusaviBackupResult>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

@@ -18,7 +18,7 @@ out of Heroic's store architecture. The Local "store" is the existing
 | `src/common/types/ipc.ts`                                     | IPC methods for Playnite, Steam URI, Collection backup |
 | `src/backend/storeManagers/sideload/library.ts`               | `init()` / `refresh()` → local install state           |
 | `src/backend/storeManagers/sideload/games.ts`                 | Steam URI launch, wait for game, stop PID              |
-| `src/backend/launcher.ts`                                     | `recordLocalSession()` after playtime                  |
+| `src/backend/launcher.ts`                                     | `recordLocalSession()` / Ludusavi backup after play    |
 | `src/preload/api/index.ts`                                    | export `localLibrary`                                  |
 | `src/frontend/screens/Game/GamePage/index.tsx`                | session history next to TimeContainer                  |
 | `src/frontend/components/UI/LibraryFilters/index.tsx`         | "Other" → "Local"                                      |
@@ -35,6 +35,7 @@ opens the Steam client (`steam://install/<id>` / `steam://uninstall/<id>`)
 from overlay code. Official Library, UninstallModal, and sideload uninstall
 are unchanged.
 
-Collection settings (gear on the Collection header) store backup folder and
-schedule in `local_library/settings.json`. On boot, a filtered copy of
-`~/.config/heroic` is written to `heroic-YYYY-MM-DD` in that folder when due.
+Collection settings (gear on the Collection header) store backup folder,
+schedule, and Ludusavi options in `local_library/settings.json`. On boot, a
+filtered copy of `~/.config/heroic` is written to `heroic-YYYY-MM-DD` when due.
+If Ludusavi auto-backup is on, saves are backed up after a game closes.

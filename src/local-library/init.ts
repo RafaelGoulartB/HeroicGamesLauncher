@@ -1,4 +1,5 @@
 import { addHandler } from 'backend/ipc'
+import { logInfo, LogPrefix } from 'backend/logger'
 import { refreshMissingLocalCovers } from './covers'
 import {
   importPlayniteLibrary,
@@ -10,7 +11,12 @@ import { exportPlayniteLibrary } from './export'
 import { refreshLocalInstallStates } from './install-state'
 import { openSteamClientUri } from './steam'
 import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
-import { getCollectionSettings, setCollectionBackupSettings } from './settings'
+import {
+  getCollectionSettings,
+  setCollectionBackupSettings,
+  setLudusaviSettings
+} from './settings'
+import { backupLudusaviForGame, detectLudusavi } from './ludusavi'
 import {
   backfillMissingGameStatuses,
   ensureDefaultStatuses,
@@ -63,17 +69,35 @@ export function registerLocalLibraryIpc() {
   addHandler('openSteamClientUri', (_e, args) =>
     openSteamClientUri(args.action, args.steamAppId)
   )
-  addHandler('getCollectionSettings', () => getCollectionSettings())
-  addHandler('setCollectionBackupSettings', (_e, args) =>
-    setCollectionBackupSettings(args)
-  )
+  addHandler('getCollectionSettings', async () => {
+    const settings = getCollectionSettings()
+    const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
+    return { ...settings, ludusaviDetected }
+  })
+  addHandler('setCollectionBackupSettings', async (_e, args) => {
+    const settings = setCollectionBackupSettings(args)
+    const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
+    return { ...settings, ludusaviDetected }
+  })
   addHandler('runCollectionBackup', (_e, force) =>
     runCollectionBackup(Boolean(force))
+  )
+  addHandler('setLudusaviSettings', async (_e, args) => {
+    const settings = setLudusaviSettings(args)
+    const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
+    return { ...settings, ludusaviDetected }
+  })
+  addHandler('runLudusaviBackup', (_e, args) =>
+    backupLudusaviForGame({ ...args, reason: 'manual' })
   )
 }
 
 export async function initLocalLibrary() {
   registerLocalLibraryIpc()
+  logInfo(
+    'Collection overlay: Ludusavi backup handler registered',
+    LogPrefix.Backend
+  )
   ensureDefaultStatuses()
   backfillMissingGameStatuses()
   await refreshLocalInstallStates()

@@ -201,6 +201,42 @@ export interface CollectionBackupSettings {
 
 export interface CollectionSettings {
   backup: CollectionBackupSettings
+  ludusavi: LudusaviSettings
+  ludusaviDetected?: LudusaviDetectedConfig
+}
+
+export type LudusaviBackupFormat = 'simple' | 'zip'
+export type LudusaviCompression = 'none' | 'deflate' | 'bzip2' | 'zstd'
+
+export interface LudusaviDetectedConfig {
+  binary: string
+  configPath?: string
+  backupPath?: string
+  format?: LudusaviBackupFormat
+  compression?: LudusaviCompression
+  version?: string
+}
+
+export interface LudusaviSettings {
+  enabled: boolean
+  useInstalledConfig: boolean
+  binaryPath: string
+  backupPath: string
+  format: LudusaviBackupFormat
+  compression: LudusaviCompression
+  lastBackupAt?: string
+  lastBackupGame?: string
+  lastBackupPath?: string
+  lastError?: string
+}
+
+export interface LudusaviBackupResult {
+  ran: boolean
+  skippedReason?: 'disabled' | 'not-found' | 'no-match' | 'already-running'
+  gameName?: string
+  backupPath?: string
+  totalGames?: number
+  error?: string
 }
 
 export interface CollectionBackupResult {

@@ -18,5 +18,7 @@ export const localLibrary = {
   openSteamUri: makeHandlerInvoker('openSteamClientUri'),
   getSettings: makeHandlerInvoker('getCollectionSettings'),
   setBackupSettings: makeHandlerInvoker('setCollectionBackupSettings'),
-  runBackup: makeHandlerInvoker('runCollectionBackup')
+  runBackup: makeHandlerInvoker('runCollectionBackup'),
+  setLudusaviSettings: makeHandlerInvoker('setLudusaviSettings'),
+  runLudusaviBackup: makeHandlerInvoker('runLudusaviBackup')
 }
