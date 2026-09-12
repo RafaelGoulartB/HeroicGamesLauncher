@@ -5,6 +5,7 @@ import { GameInfo } from 'common/types'
 import LibraryContext from '../../LibraryContext'
 import './index.css'
 import AddGameButton from '../AddGameButton'
+import ImportPlayniteButton from '../ImportPlayniteButton'
 
 type Props = {
   list: GameInfo[]
@@ -36,6 +37,7 @@ export default React.memo(function LibraryHeader({ list }: Props) {
             : t('title.allGames', 'All Games')}
           <span className="numberOfgames">{numberOfGames}</span>
           <AddGameButton data-tour="library-add-game" />
+          <ImportPlayniteButton />
         </span>
         <ActionIcons />
       </div>
