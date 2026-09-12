@@ -1,11 +1,16 @@
+import { spawn } from 'child_process'
 import { parse } from '@node-steam/vdf'
 import { existsSync, readdirSync, readFileSync } from 'graceful-fs'
 import { homedir } from 'os'
 import { basename, dirname, join } from 'path'
 import type LogWriter from 'backend/logger/log_writer'
-import { logInfo, LogPrefix } from 'backend/logger'
+import { logError, logInfo, LogPrefix } from 'backend/logger'
 import { searchForExecutableOnPath } from 'backend/utils/os/path'
 import type { GameInfo } from 'common/types'
+import type {
+  SteamClientUriAction,
+  SteamClientUriResult
+} from 'common/types/local-library'
 import { getLocalGameMeta } from './stores'
 
 const STEAM_INSTALL_CACHE_MS = 15_000
@@ -61,6 +66,52 @@ export async function findSteamBinary(): Promise<string | null> {
 
 export async function isSteamClientAvailable(): Promise<boolean> {
   return Boolean(await findSteamBinary())
+}
+
+export function invalidateSteamManifestCache() {
+  steamManifestCache = null
+}
+
+export async function openSteamClientUri(
+  action: SteamClientUriAction,
+  steamAppId: string
+): Promise<SteamClientUriResult> {
+  const steamBin = await findSteamBinary()
+  if (!steamBin) {
+    logError('Steam client was not found on PATH', LogPrefix.Backend)
+    return { ok: false, error: 'Steam client was not found' }
+  }
+
+  const uri = `steam://${action}/${steamAppId}`
+  logInfo(`Opening Steam via ${uri}`, LogPrefix.Backend)
+  invalidateSteamManifestCache()
+
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (result: SteamClientUriResult) => {
+      if (settled) return
+      settled = true
+      resolve(result)
+    }
+
+    const child = spawn(steamBin, [uri], {
+      detached: true,
+      stdio: 'ignore'
+    })
+    child.once('error', (error) => {
+      logError(
+        `Failed to open Steam (${uri}): ${error.message}`,
+        LogPrefix.Backend
+      )
+      finish({ ok: false, error: error.message })
+    })
+    const onSpawned = () => {
+      child.unref()
+      finish({ ok: true })
+    }
+    child.once('spawn', onSpawned)
+    if (typeof child.pid === 'number') onSpawned()
+  })
 }
 
 export async function steamLibraryRoots(): Promise<string[]> {

@@ -100,6 +100,11 @@
     },
     "cloud_save_unsupported": "Unsupported",
     "collection": {
+        "steam": {
+            "clientMissing": "Steam was not found. Install or launch the Steam client, then try again.",
+            "clientMissingTitle": "Steam not found",
+            "uninstallHelp": "This opens Steam to uninstall \"{{title}}\". The game stays in Collection; Heroic marks it uninstalled after Steam finishes and you refresh or reopen Heroic Local."
+        },
         "tracking": "Counting playtime"
     },
     "disabled": "Disabled",

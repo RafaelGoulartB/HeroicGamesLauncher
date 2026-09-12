@@ -58,6 +58,7 @@ import {
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
+import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import './CollectionCard.css'
 
 const storage: Storage = window.localStorage
@@ -182,6 +183,7 @@ export default function CollectionCard({
     favouriteGames.list.find((game: FavouriteGame) => game.appName === appName)
   )
   const isSideloaded = runner === 'sideload'
+  const steamAppId = steamAppIdFromMeta(meta)
 
   const handleRemoveFromQueue = () => {
     window.api.removeFromDMQueue(appName)
@@ -193,7 +195,54 @@ export default function CollectionCard({
     }
   }
 
-  const handleEdit = () => {
+  function handleInstall() {
+    if (steamAppId) {
+      void openSteamFromCollection('install')
+      return
+    }
+    openInstallGameModal({ appName, runner, gameInfo })
+  }
+
+  function handleUninstall() {
+    if (steamAppId) {
+      showDialogModal({
+        showDialog: true,
+        type: 'MESSAGE',
+        title: t('button.uninstall'),
+        message: t(
+          'collection.steam.uninstallHelp',
+          'This opens Steam to uninstall "{{title}}". The game stays in Collection; Heroic marks it uninstalled after Steam finishes and you refresh or reopen Heroic Local.',
+          { title }
+        ),
+        buttons: [
+          {
+            text: t('box.yes'),
+            onClick: () => void openSteamFromCollection('uninstall')
+          },
+          { text: t('box.no') }
+        ]
+      })
+      return
+    }
+    setShowUninstallModal(true)
+  }
+
+  async function openSteamFromCollection(action: 'install' | 'uninstall') {
+    if (!steamAppId) return
+    const result = await openSteamStoreUri(action, steamAppId)
+    if (result.ok) return
+    showDialogModal({
+      showDialog: true,
+      type: 'ERROR',
+      title: t('collection.steam.clientMissingTitle', 'Steam not found'),
+      message: t(
+        'collection.steam.clientMissing',
+        'Steam was not found. Install or launch the Steam client, then try again.'
+      )
+    })
+  }
+
+  function handleEdit() {
     if (isSideloaded) {
       openInstallGameModal({ appName, runner, gameInfo })
       return
@@ -306,7 +355,7 @@ export default function CollectionCard({
           onClick={(event) => {
             event.preventDefault()
             event.stopPropagation()
-            openInstallGameModal({ appName, runner, gameInfo })
+            handleInstall()
           }}
         >
           <DownIcon />
@@ -367,12 +416,12 @@ export default function CollectionCard({
           {
             label: t('button.update', 'Update'),
             onclick: () => void handleUpdate(),
-            show: hasUpdate && !isUpdating && !isQueued,
+            show: hasUpdate && !isUpdating && !isQueued && !steamAppId,
             icon: <Upgrade />
           },
           {
             label: t('button.install'),
-            onclick: () => openInstallGameModal({ appName, runner, gameInfo }),
+            onclick: handleInstall,
             show: !isInstalled && !isQueued && isInstallable,
             icon: <Download />
           },
@@ -449,7 +498,7 @@ export default function CollectionCard({
           },
           {
             label: t('button.uninstall'),
-            onclick: () => setShowUninstallModal(true),
+            onclick: handleUninstall,
             show: isInstalled && !isUpdating && !isPlaying,
             icon: <DeleteForever />
           }
