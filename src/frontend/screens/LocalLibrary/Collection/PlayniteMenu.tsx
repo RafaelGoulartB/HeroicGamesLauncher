@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Dropdown from 'frontend/components/UI/Dropdown'
 import ContextProvider from 'frontend/state/ContextProvider'
 import ImportPlayniteDialog from 'frontend/screens/LocalLibrary/ImportPlayniteDialog'
+import MergePlayniteDialog from './MergePlayniteDialog'
 import './PlayniteMenu.css'
 
 type Props = {
@@ -11,56 +12,54 @@ type Props = {
 
 export default function PlayniteMenu({ onLibraryChanged }: Props) {
   const { t } = useTranslation()
-  const { showDialogModal, refreshLibrary } = useContext(ContextProvider)
+  const { showDialogModal } = useContext(ContextProvider)
   const [importOpen, setImportOpen] = useState(false)
-  const [merging, setMerging] = useState(false)
+  const [mergeOpen, setMergeOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [lastPath, setLastPath] = useState<string | undefined>()
 
   useEffect(() => {
     void window.api.localLibrary.getLastLibraryPath().then(setLastPath)
   }, [importOpen])
 
-  async function handleMerge() {
-    setMerging(true)
+  async function handleExport() {
+    const folder = await window.api.openDialog({
+      title: t(
+        'collection.playnite.exportFolder',
+        'Choose a folder for the Playnite export'
+      ),
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (!folder) return
+    setExporting(true)
     try {
-      const result = await window.api.localLibrary.mergeLibrary()
-      await refreshLibrary({
-        library: 'sideload',
-        runInBackground: false
-      })
-      onLibraryChanged()
-      const failed =
-        result.errors.length > 0 && result.imported + result.updated === 0
-      const errorText = result.errors.length
-        ? `\n${result.errors.slice(0, 4).join('\n')}`
-        : ''
+      const result = await window.api.localLibrary.exportLibrary(folder)
       showDialogModal({
         showDialog: true,
-        type: failed ? 'ERROR' : 'MESSAGE',
-        title: t('collection.playnite.mergeTitle', 'Playnite merge'),
-        message: failed
-          ? result.errors.join('\n')
-          : t(
-              'collection.playnite.mergeDone',
-              'Merged without overwriting your Heroic status. New games {{imported}}, updated {{updated}}, sessions {{sessions}}, skipped {{skipped}}.{{errors}}',
-              {
-                imported: result.imported,
-                updated: result.updated,
-                sessions: result.sessionsImported,
-                skipped: result.skipped,
-                errors: errorText
-              }
-            )
+        type: 'MESSAGE',
+        title: t('collection.playnite.exportTitle', 'Export for Playnite'),
+        message: t(
+          'collection.playnite.exportDone',
+          'Exported {{count}} games to {{path}}. Copy this file to Windows when you want Playnite to pick up Heroic playtime and status.',
+          { count: result.gameCount, path: result.path }
+        ),
+        buttons: [
+          {
+            text: t('box.show-in-folder', 'Show in folder'),
+            onClick: () => window.api.showItemInFolder(result.path)
+          },
+          { text: t('box.close', 'Close') }
+        ]
       })
     } catch (error) {
       showDialogModal({
         showDialog: true,
         type: 'ERROR',
-        title: t('collection.playnite.mergeTitle', 'Playnite merge'),
+        title: t('collection.playnite.exportTitle', 'Export for Playnite'),
         message: String(error)
       })
     } finally {
-      setMerging(false)
+      setExporting(false)
     }
   }
 
@@ -82,7 +81,7 @@ export default function PlayniteMenu({ onLibraryChanged }: Props) {
         <button
           type="button"
           className="collectionPlayniteMenu__item"
-          disabled={merging || !lastPath}
+          disabled={!lastPath}
           title={
             lastPath ||
             t(
@@ -90,11 +89,19 @@ export default function PlayniteMenu({ onLibraryChanged }: Props) {
               'Import a library first to enable merge'
             )
           }
-          onClick={() => void handleMerge()}
+          onClick={() => setMergeOpen(true)}
         >
-          {merging
-            ? t('collection.playnite.merging', 'Merging…')
-            : t('collection.playnite.merge', 'Merge from Playnite')}
+          {t('collection.playnite.merge', 'Merge from Playnite')}
+        </button>
+        <button
+          type="button"
+          className="collectionPlayniteMenu__item"
+          disabled={exporting}
+          onClick={() => void handleExport()}
+        >
+          {exporting
+            ? t('collection.playnite.exporting', 'Exporting…')
+            : t('collection.playnite.export', 'Export for Playnite…')}
         </button>
       </Dropdown>
       {importOpen && (
@@ -103,6 +110,12 @@ export default function PlayniteMenu({ onLibraryChanged }: Props) {
             setImportOpen(false)
             onLibraryChanged()
           }}
+        />
+      )}
+      {mergeOpen && (
+        <MergePlayniteDialog
+          onClose={() => setMergeOpen(false)}
+          onMerged={onLibraryChanged}
         />
       )}
     </>

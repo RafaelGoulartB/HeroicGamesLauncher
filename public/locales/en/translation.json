@@ -151,6 +151,7 @@
             "message-remove-mac": "Shortcuts were removed from the Applications folder",
             "title": "Shortcuts"
         },
+        "show-in-folder": "Show in folder",
         "sync": {
             "error": "Invalid Path",
             "title": "Choose the saves directory"
@@ -226,15 +227,38 @@
         "group": "Group by status",
         "newStatus": "New status",
         "playnite": {
+            "export": "Export for Playnite…",
+            "exportDone_one": "Exported {{count}} games to {{path}}. Copy this file to Windows when you want Playnite to pick up Heroic playtime and status.",
+            "exportDone_other": "Exported {{count}} games to {{path}}. Copy this file to Windows when you want Playnite to pick up Heroic playtime and status.",
+            "exportFolder": "Choose a folder for the Playnite export",
+            "exporting": "Exporting…",
+            "exportTitle": "Export for Playnite",
             "import": "Import library…",
             "menu": "Playnite",
             "merge": "Merge from Playnite",
+            "mergeConfirm": "Merge",
             "mergeDone": "Merged without overwriting your Heroic status. New games {{imported}}, updated {{updated}}, sessions {{sessions}}, skipped {{skipped}}.{{errors}}",
+            "mergeHelp": "This merges Playnite into Heroic. Status you changed here is kept. Playtime takes the higher value. New Playnite games are added.",
             "mergeTitle": "Playnite merge",
             "merging": "Merging…",
-            "needImport": "Import a library first to enable merge"
+            "needImport": "Import a library first to enable merge",
+            "previewConflicts": "Status conflicts (keep Heroic)",
+            "previewing": "Reading Playnite library…",
+            "previewNew": "New games",
+            "previewNone": "None",
+            "previewPlaytime": "Playtime increases",
+            "previewSessions": "New sessions",
+            "previewSkipped": "Skipped",
+            "previewStatus": "Status from Playnite",
+            "previewUnchanged": "Unchanged"
         },
         "sidebar": "Collection",
+        "sort": {
+            "lastPlayed": "Last played",
+            "menu": "Sort",
+            "playtime": "Playtime",
+            "title": "Title"
+        },
         "status": {
             "label": "Status",
             "manage": "Manage statuses…",

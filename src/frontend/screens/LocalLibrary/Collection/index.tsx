@@ -22,9 +22,10 @@ import type {
 import ContextProvider from 'frontend/state/ContextProvider'
 import SearchBar from 'frontend/components/UI/SearchBar'
 import FormControl from 'frontend/components/UI/FormControl'
-import { configStore } from 'frontend/helpers/electronStores'
+import { configStore, timestampStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
 import PlayniteMenu from './PlayniteMenu'
+import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
 import './index.css'
@@ -32,6 +33,7 @@ import './index.css'
 type InstallFilter = 'all' | 'installed' | 'uninstalled'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
+const SORT_KEY = 'collection_sort'
 const storage: Storage = window.localStorage
 
 function slugForMeta(
@@ -54,6 +56,22 @@ function readInstallFilter(): InstallFilter {
   return 'all'
 }
 
+function readSort(): CollectionSort {
+  const stored = storage.getItem(SORT_KEY)
+  if (stored === 'lastPlayed' || stored === 'playtime' || stored === 'title') {
+    return stored
+  }
+  return 'title'
+}
+
+function playtimeMinutes(appName: string): number {
+  return timestampStore.get_nodefault(appName)?.totalPlayed ?? 0
+}
+
+function lastPlayedAt(appName: string): string {
+  return timestampStore.get_nodefault(appName)?.lastPlayed ?? ''
+}
+
 export default function Collection() {
   const { t } = useTranslation()
   const { epic, gog, amazon, zoom, sideloadedLibrary, allTilesInColor } =
@@ -61,6 +79,7 @@ export default function Collection() {
   const [search, setSearch] = useState('')
   const [installFilter, setInstallFilter] =
     useState<InstallFilter>(readInstallFilter)
+  const [sort, setSort] = useState<CollectionSort>(readSort)
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
@@ -76,6 +95,11 @@ export default function Collection() {
   function handleInstallFilter(next: InstallFilter) {
     storage.setItem(INSTALL_FILTER_KEY, next)
     setInstallFilter(next)
+  }
+
+  function handleSort(next: CollectionSort) {
+    storage.setItem(SORT_KEY, next)
+    setSort(next)
   }
 
   async function reload() {
@@ -118,7 +142,7 @@ export default function Collection() {
       seen.add(key)
       unique.push(game)
     }
-    return unique.sort((a, b) => a.title.localeCompare(b.title))
+    return unique
   }, [
     sideloadedLibrary,
     epic.library,
@@ -129,13 +153,31 @@ export default function Collection() {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return games.filter((game) => {
+    const next = games.filter((game) => {
       if (query && !game.title.toLowerCase().includes(query)) return false
       if (installFilter === 'installed') return game.is_installed
       if (installFilter === 'uninstalled') return !game.is_installed
       return true
     })
-  }, [games, search, installFilter])
+
+    return next.sort((a, b) => {
+      if (sort === 'playtime') {
+        const delta = playtimeMinutes(b.app_name) - playtimeMinutes(a.app_name)
+        if (delta) return delta
+      }
+      if (sort === 'lastPlayed') {
+        const aLast = lastPlayedAt(a.app_name)
+        const bLast = lastPlayedAt(b.app_name)
+        if (aLast || bLast) {
+          if (!aLast) return 1
+          if (!bLast) return -1
+          const delta = bLast.localeCompare(aLast)
+          if (delta) return delta
+        }
+      }
+      return a.title.localeCompare(b.title)
+    })
+  }, [games, search, installFilter, sort])
 
   const grouped = useMemo(() => {
     const buckets = new Map<string, GameInfo[]>()
@@ -179,7 +221,7 @@ export default function Collection() {
       .forEach((card) => observer.observe(card))
 
     return () => observer.disconnect()
-  }, [filtered, groupByStatus, statuses, metas])
+  }, [filtered, groupByStatus, statuses, metas, sort])
 
   async function handleStatusChange(game: GameInfo, statusId: string) {
     const next = await window.api.localLibrary.setStatus({
@@ -263,6 +305,7 @@ export default function Collection() {
               />
             </button>
           </FormControl>
+          <SortMenu value={sort} onChange={handleSort} />
           <PlayniteMenu onLibraryChanged={() => void reload()} />
           <StatusMenu
             groupByStatus={groupByStatus}
