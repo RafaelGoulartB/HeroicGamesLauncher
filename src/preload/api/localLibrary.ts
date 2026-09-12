@@ -3,6 +3,8 @@ import { makeHandlerInvoker } from '../ipc'
 export const localLibrary = {
   previewImport: makeHandlerInvoker('previewPlayniteImport'),
   importLibrary: makeHandlerInvoker('importPlayniteLibrary'),
+  mergeLibrary: makeHandlerInvoker('mergePlayniteLibrary'),
+  getLastLibraryPath: makeHandlerInvoker('getLastPlayniteLibraryPath'),
   getSessions: makeHandlerInvoker('getLocalGameSessions'),
   getMeta: makeHandlerInvoker('getLocalGameMeta'),
   getAllMeta: makeHandlerInvoker('getAllLocalGameMeta'),

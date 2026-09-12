@@ -236,6 +236,8 @@ interface AsyncIPCFunctions {
   importPlayniteLibrary: (
     args: PlayniteImportArgs
   ) => Promise<PlayniteImportResult>
+  mergePlayniteLibrary: () => Promise<PlayniteImportResult>
+  getLastPlayniteLibraryPath: () => Promise<string | undefined>
   getLocalGameSessions: (appName: string) => Promise<LocalGameSession[]>
   getLocalGameMeta: (appName: string) => Promise<LocalGameMeta | undefined>
   getAllLocalGameMeta: () => Promise<Record<string, LocalGameMeta>>

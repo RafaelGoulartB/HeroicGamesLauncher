@@ -33,7 +33,7 @@ export function getAllLocalGameMeta(): Record<string, LocalGameMeta> {
 }
 
 export function upsertLocalGameMeta(meta: LocalGameMeta) {
-  const games = libraryFile.get('games')
+  const games = { ...libraryFile.get('games') }
   games[meta.appName] = meta
   libraryFile.set('games', games)
 }
@@ -55,7 +55,7 @@ export function replaceLocalSessions(
   appName: string,
   sessions: LocalGameSession[]
 ) {
-  const all = sessionFile.get('sessions')
+  const all = { ...sessionFile.get('sessions') }
   all[appName] = sessions
   sessionFile.set('sessions', all)
 }

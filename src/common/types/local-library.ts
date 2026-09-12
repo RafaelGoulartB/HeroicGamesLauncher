@@ -116,6 +116,7 @@ export interface PlayniteImportArgs {
   libraryPath: string
   driveMap: DriveRemap[]
   fetchCovers?: boolean
+  mergeExisting?: boolean
 }
 
 export interface PlayniteImportResult {

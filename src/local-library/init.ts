@@ -1,12 +1,9 @@
-import { existsSync } from 'graceful-fs'
-import { homedir } from 'os'
-import { join } from 'path'
 import { addHandler } from 'backend/ipc'
 import { refreshMissingLocalCovers } from './covers'
 import {
   importPlayniteLibrary,
-  previewPlayniteImport,
-  syncPlayniteCompletionStatuses
+  mergePlayniteLibrary,
+  previewPlayniteImport
 } from './import'
 import { refreshLocalInstallStates } from './install-state'
 import {
@@ -23,18 +20,6 @@ import {
   getLocalSessions
 } from './stores'
 
-function findPlayniteLibrary(): string | undefined {
-  const candidates = [
-    getLastPlayniteLibraryPath(),
-    join(process.cwd(), '..', 'playnite-database'),
-    join(
-      homedir(),
-      'Documents/Projects/Personal/game-launcher/playnite-database'
-    )
-  ]
-  return candidates.find((path) => path && existsSync(join(path, 'games.db')))
-}
-
 let registered = false
 
 export function registerLocalLibraryIpc() {
@@ -43,6 +28,8 @@ export function registerLocalLibraryIpc() {
 
   addHandler('previewPlayniteImport', (_e, args) => previewPlayniteImport(args))
   addHandler('importPlayniteLibrary', (_e, args) => importPlayniteLibrary(args))
+  addHandler('mergePlayniteLibrary', () => mergePlayniteLibrary())
+  addHandler('getLastPlayniteLibraryPath', () => getLastPlayniteLibraryPath())
   addHandler('getLocalGameSessions', (_e, appName) => getLocalSessions(appName))
   addHandler('getLocalGameMeta', (_e, appName) => getLocalGameMeta(appName))
   addHandler('getAllLocalGameMeta', () => getAllLocalGameMeta())
@@ -63,10 +50,6 @@ export function registerLocalLibraryIpc() {
 export async function initLocalLibrary() {
   registerLocalLibraryIpc()
   ensureDefaultStatuses()
-  const playniteLibrary = findPlayniteLibrary()
-  if (playniteLibrary) {
-    syncPlayniteCompletionStatuses(playniteLibrary)
-  }
   backfillMissingGameStatuses()
   await refreshLocalInstallStates()
   void refreshMissingLocalCovers()

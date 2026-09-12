@@ -1,7 +1,8 @@
 import Store from 'electron-store'
 import type {
   CompletionStatus,
-  CompletionStatusSlug
+  CompletionStatusSlug,
+  DriveRemap
 } from 'common/types/local-library'
 import { getAllLocalGameMeta, upsertLocalGameMeta } from './stores'
 import { tsStore } from 'backend/constants/key_value_stores'
@@ -9,6 +10,7 @@ import { tsStore } from 'backend/constants/key_value_stores'
 type StatusFile = {
   statuses: CompletionStatus[]
   lastPlayniteLibraryPath?: string
+  lastPlayniteDriveMap?: DriveRemap[]
 }
 
 const statusFile = new Store<StatusFile>({
@@ -90,6 +92,14 @@ export function setLastPlayniteLibraryPath(libraryPath: string) {
 
 export function getLastPlayniteLibraryPath(): string | undefined {
   return statusFile.get('lastPlayniteLibraryPath')
+}
+
+export function setLastPlayniteDriveMap(driveMap: DriveRemap[]) {
+  statusFile.set('lastPlayniteDriveMap', driveMap)
+}
+
+export function getLastPlayniteDriveMap(): DriveRemap[] {
+  return statusFile.get('lastPlayniteDriveMap') ?? []
 }
 
 export function ensureDefaultStatuses(): CompletionStatus[] {
@@ -189,6 +199,29 @@ export function statusIdForPlaynite(
 
 export function inferredStatusId(playtimeMinutes: number): string {
   return playtimeMinutes > 0 ? 'played' : 'not-played'
+}
+
+export function mergeGameCompletionStatus(
+  meta: { completionStatusId?: string; playniteCompletionStatusId?: string },
+  playniteStatusId: string | undefined,
+  playtimeMinutes: number
+): string {
+  const fromPlaynite = playniteStatusId
+    ? statusIdForPlaynite(playniteStatusId)
+    : inferredStatusId(playtimeMinutes)
+  const heroic = meta.completionStatusId
+  if (!heroic) return fromPlaynite
+
+  if (playniteStatusId === meta.playniteCompletionStatusId) {
+    return heroic
+  }
+
+  const lastImported = meta.playniteCompletionStatusId
+    ? statusIdForPlaynite(meta.playniteCompletionStatusId)
+    : undefined
+  if (heroic === lastImported) return fromPlaynite
+
+  return heroic
 }
 
 export function setGameCompletionStatus(

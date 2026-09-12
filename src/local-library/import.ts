@@ -10,6 +10,7 @@ import { libraryStore as gogStore } from 'backend/storeManagers/gog/electronStor
 import type { GameInfo } from 'common/types'
 import type {
   DriveRemap,
+  LocalGameMeta,
   PlayniteImportArgs,
   PlayniteImportPreview,
   PlayniteImportResult,
@@ -32,9 +33,13 @@ import {
 import { findSteamBinary, isSteamAppInstalled } from './steam'
 import {
   inferredStatusId,
+  mergeGameCompletionStatus,
   mergePlayniteStatuses,
   setLastPlayniteLibraryPath,
-  statusIdForPlaynite
+  setLastPlayniteDriveMap,
+  statusIdForPlaynite,
+  getLastPlayniteLibraryPath,
+  getLastPlayniteDriveMap
 } from './status'
 
 function upsertSideloadGame(game: GameInfo) {
@@ -114,6 +119,25 @@ async function applyLauncherArgs(appName: string, launcherArgs?: string) {
   const settings = await config.getSettings()
   config.config = { ...settings, launcherArgs }
   config.flush()
+}
+
+function mergeExistingMeta(
+  existed: LocalGameMeta,
+  incoming: LocalGameMeta
+): LocalGameMeta {
+  return {
+    ...existed,
+    title: incoming.title || existed.title,
+    notes: incoming.notes ?? existed.notes,
+    pluginId: incoming.pluginId ?? existed.pluginId,
+    source: incoming.source,
+    steamAppId: incoming.steamAppId ?? existed.steamAppId,
+    storeGameId: incoming.storeGameId ?? existed.storeGameId,
+    windowsInstallDirectory: incoming.windowsInstallDirectory,
+    windowsExecutable: incoming.windowsExecutable,
+    playniteCompletionStatusId: incoming.playniteCompletionStatusId,
+    completionStatusId: incoming.completionStatusId
+  }
 }
 
 function destinationFor(
@@ -233,6 +257,7 @@ export async function importPlayniteLibrary(
   const steamBin = await findSteamBinary()
   mergePlayniteStatuses(dump.completionStatuses)
   setLastPlayniteLibraryPath(dump.libraryPath)
+  setLastPlayniteDriveMap(driveMap)
 
   logInfo(
     `Importing Playnite library from ${args.libraryPath} (${dump.games.length} games)`,
@@ -244,11 +269,49 @@ export async function importPlayniteLibrary(
       const sessions = playniteSessionsToLocal(game.id, dump.sessionsByGameId)
       const mapped = mapPlayniteGame(game, dump.emulators, sessions, driveMap)
       const destination = destinationFor(mapped)
-      const existed = Boolean(findMetaByPlayniteId(game.id))
+      const existed = findMetaByPlayniteId(game.id)
+      mapped.meta.completionStatusId = existed
+        ? mergeGameCompletionStatus(
+            existed,
+            mapped.meta.playniteCompletionStatusId,
+            mapped.playtimeMinutes
+          )
+        : mapped.meta.playniteCompletionStatusId
+          ? statusIdForPlaynite(mapped.meta.playniteCompletionStatusId)
+          : inferredStatusId(mapped.playtimeMinutes)
 
-      mapped.meta.completionStatusId = mapped.meta.playniteCompletionStatusId
-        ? statusIdForPlaynite(mapped.meta.playniteCompletionStatusId)
-        : inferredStatusId(mapped.playtimeMinutes)
+      if (existed) {
+        mapped.meta = args.mergeExisting
+          ? mergeExistingMeta(existed, mapped.meta)
+          : {
+              ...existed,
+              ...mapped.meta,
+              completionStatusId: mapped.meta.completionStatusId,
+              playniteCompletionStatusId: mapped.meta.playniteCompletionStatusId
+            }
+      }
+
+      if (destination === 'skip' && !existed) {
+        result.skipped += 1
+        continue
+      }
+
+      if (args.mergeExisting && existed) {
+        upsertLocalGameMeta(mapped.meta)
+        writePlaytime(
+          mapped.meta.appName,
+          mapped.playtimeMinutes,
+          mapped.firstPlayed,
+          mapped.lastPlayed
+        )
+        mergeLocalSessions(mapped.meta.appName, mapped.sessions)
+        result.sessionsImported += mapped.sessions.length
+        result.updated += 1
+        if (mapped.meta.runner === 'legendary' || mapped.meta.runner === 'gog') {
+          result.matchedStore += 1
+        }
+        continue
+      }
 
       if (destination === 'skip') {
         result.skipped += 1
@@ -292,7 +355,7 @@ export async function importPlayniteLibrary(
           : ''
       }
 
-      if (args.fetchCovers !== false) {
+      if (args.fetchCovers !== false && !(args.mergeExisting && existed)) {
         const covers = await fetchCoversForGame(mapped.meta, mapped.gameInfo)
         if (covers.art_cover || covers.art_square) {
           mapped.gameInfo = { ...mapped.gameInfo, ...covers }
@@ -324,21 +387,27 @@ export async function importPlayniteLibrary(
   return result
 }
 
-export function syncPlayniteCompletionStatuses(libraryPath: string) {
-  if (!existsSync(join(libraryPath, 'games.db'))) return
-  const dump = loadPlayniteLibrary(libraryPath)
-  mergePlayniteStatuses(dump.completionStatuses)
-  setLastPlayniteLibraryPath(dump.libraryPath)
-
-  for (const game of dump.games) {
-    const meta = findMetaByPlayniteId(game.id)
-    if (!meta) continue
-    upsertLocalGameMeta({
-      ...meta,
-      playniteCompletionStatusId: game.completionStatusId,
-      completionStatusId: game.completionStatusId
-        ? statusIdForPlaynite(game.completionStatusId)
-        : inferredStatusId(Math.floor(game.playtimeSeconds / 60))
-    })
+export async function mergePlayniteLibrary(): Promise<PlayniteImportResult> {
+  const libraryPath = getLastPlayniteLibraryPath()
+  if (!libraryPath || !existsSync(join(libraryPath, 'games.db'))) {
+    return {
+      imported: 0,
+      updated: 0,
+      matchedStore: 0,
+      skipped: 0,
+      coversFetched: 0,
+      sessionsImported: 0,
+      errors: [
+        'No Playnite library path is saved. Import a library first, then merge.'
+      ]
+    }
   }
+
+  logInfo(`Merging Playnite library from ${libraryPath}`, LogPrefix.Backend)
+  return importPlayniteLibrary({
+    libraryPath,
+    driveMap: getLastPlayniteDriveMap(),
+    fetchCovers: true,
+    mergeExisting: true
+  })
 }
