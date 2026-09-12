@@ -3,10 +3,12 @@ import react from '@vitejs/plugin-react-swc'
 import svgr from 'vite-plugin-svgr'
 import path from 'path'
 
-const srcAliases = ['backend', 'frontend', 'common'].map((aliasName) => ({
-  find: aliasName,
-  replacement: path.join(__dirname, 'src', aliasName)
-}))
+const srcAliases = ['backend', 'frontend', 'common', 'local-library'].map(
+  (aliasName) => ({
+    find: aliasName,
+    replacement: path.join(__dirname, 'src', aliasName)
+  })
+)
 
 const dependenciesToNotExternalize = [
   '@xhmikosr/decompress',

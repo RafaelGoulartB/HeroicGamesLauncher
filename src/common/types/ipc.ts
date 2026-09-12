@@ -54,6 +54,14 @@ import type { GOGCloudSavesLocation, UserData } from './gog'
 import type { NileLoginData, NileRegisterData, NileUserData } from './nile'
 import type { GameOverride, SelectiveDownload } from './legendary'
 import type { GetLogFileArgs } from 'backend/logger/paths'
+import type {
+  LocalGameMeta,
+  LocalGameSession,
+  PlayniteImportArgs,
+  PlayniteImportPreview,
+  PlayniteImportResult,
+  PlaynitePreviewArgs
+} from './local-library'
 
 // ts-prune-ignore-next
 interface SyncIPCFunctions {
@@ -221,6 +229,14 @@ interface AsyncIPCFunctions {
   requestGameSettings: (appName: string) => Promise<GameSettings>
   writeConfig: (args: { appName: string; config: Partial<AppSettings> }) => void
   refreshLibrary: (library?: Runner | 'all') => Promise<void>
+  previewPlayniteImport: (
+    args: PlaynitePreviewArgs
+  ) => Promise<PlayniteImportPreview>
+  importPlayniteLibrary: (
+    args: PlayniteImportArgs
+  ) => Promise<PlayniteImportResult>
+  getLocalGameSessions: (appName: string) => Promise<LocalGameSession[]>
+  getLocalGameMeta: (appName: string) => Promise<LocalGameMeta | undefined>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>
