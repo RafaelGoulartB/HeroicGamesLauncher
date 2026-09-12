@@ -224,6 +224,15 @@
         },
         "group": "Group by status",
         "newStatus": "New status",
+        "playnite": {
+            "import": "Import library…",
+            "menu": "Playnite",
+            "merge": "Merge from Playnite",
+            "mergeDone": "Merged without overwriting your Heroic status. New games {{imported}}, updated {{updated}}, sessions {{sessions}}, skipped {{skipped}}.{{errors}}",
+            "mergeTitle": "Playnite merge",
+            "merging": "Merging…",
+            "needImport": "Import a library first to enable merge"
+        },
         "sidebar": "Collection",
         "status": {
             "label": "Status"
@@ -623,7 +632,6 @@
     "Local": "Local",
     "localLibrary": {
         "import": {
-            "button": "Import Playnite",
             "confirm": "Import",
             "covers": "Download covers from Steam / SteamGridDB",
             "done": "Imported {{imported}}, updated {{updated}}, matched store playtime {{matched}}, skipped {{skipped}}, covers {{covers}}, sessions {{sessions}}.",
