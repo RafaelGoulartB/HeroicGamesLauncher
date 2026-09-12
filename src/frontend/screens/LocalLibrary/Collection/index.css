@@ -83,3 +83,27 @@
   padding: var(--space-sm) 0 var(--space-md);
   color: var(--text-secondary);
 }
+
+.collection__iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--space-3xs);
+  background: var(--input-background, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.collection__iconBtn:hover {
+  color: var(--text-default);
+  background: var(--navbar-active-background, var(--accent));
+}
+
+.collection__iconBtn svg {
+  font-size: 1.25rem;
+}

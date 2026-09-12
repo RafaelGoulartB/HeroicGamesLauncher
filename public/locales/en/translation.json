@@ -252,6 +252,22 @@
             "previewStatus": "Status from Playnite",
             "previewUnchanged": "Unchanged"
         },
+        "settings": {
+            "backup": "Backup",
+            "backupDaily": "Once a day",
+            "backupDone": "Backup saved to {{path}}",
+            "backupFolder": "Backup folder",
+            "backupHelp": "Copies Heroic config (Collection, playtime, statuses, Local games, logins) into the folder below. Installed games are not included. Cache and Wine tools are skipped. A dated folder is created when Heroic Local opens, if the schedule is due.",
+            "backupInterval": "How often",
+            "backupMonthly": "Once a month",
+            "backupNever": "Never",
+            "backupNow": "Backup now",
+            "backupRunning": "Backing up…",
+            "backupSkipped": "Backup is already up to date.",
+            "backupWeekly": "Once a week",
+            "lastBackup": "Last backup",
+            "title": "Collection settings"
+        },
         "sidebar": "Collection",
         "sort": {
             "lastPlayed": "Last played",

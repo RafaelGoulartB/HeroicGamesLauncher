@@ -14,6 +14,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { faHardDrive as hardDriveLight } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Settings } from '@mui/icons-material'
 import type { GameInfo } from 'common/types'
 import type {
   CompletionStatus,
@@ -24,6 +25,7 @@ import SearchBar from 'frontend/components/UI/SearchBar'
 import FormControl from 'frontend/components/UI/FormControl'
 import { configStore, timestampStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
+import CollectionSettingsDialog from './CollectionSettingsDialog'
 import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
@@ -83,6 +85,7 @@ export default function Collection() {
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -312,6 +315,15 @@ export default function Collection() {
             onGroupByStatusChange={setGroupByStatus}
             onStatusesChanged={() => void reload()}
           />
+          <button
+            type="button"
+            className="collection__iconBtn"
+            title={t('collection.settings.title', 'Collection settings')}
+            aria-label={t('collection.settings.title', 'Collection settings')}
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings />
+          </button>
         </div>
       </header>
 
@@ -353,6 +365,9 @@ export default function Collection() {
           </section>
         )}
       </div>
+      {settingsOpen && (
+        <CollectionSettingsDialog onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   )
 }
