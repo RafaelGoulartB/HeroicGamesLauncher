@@ -9,6 +9,17 @@
   animation: fade-in 0.1s ease-in;
   aspect-ratio: 173 / 275;
   width: 100%;
+  transition:
+    box-shadow 0.35s ease,
+    background-color 0.35s ease,
+    transform 0.35s ease;
+}
+
+.collectionCard__cover {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .collectionCard__link {
@@ -17,15 +28,21 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: none;
   color: inherit;
+  font: inherit;
+  text-align: inherit;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .collectionCard__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  aspect-ratio: 3 / 4;
+  object-position: center;
   display: block;
   transition:
     filter 0.2s,
@@ -46,6 +63,9 @@
   z-index: 5;
   top: 8px;
   left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-weight: var(--semibold);
   font-size: var(--text-sm);
   background: linear-gradient(
@@ -57,6 +77,18 @@
   border-radius: 4px;
   color: var(--text-default);
   pointer-events: none;
+}
+
+.collectionCard__playtime.is-empty {
+  display: none;
+}
+
+.collectionCard__clock {
+  display: none;
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  opacity: 0.78;
 }
 
 .collectionCard__statusDot {
@@ -151,6 +183,22 @@
   cursor: default;
 }
 
+.collectionCard.is-focused {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 14px 2px rgba(0, 0, 0, 0.5);
+}
+
+.collectionCard.is-focused::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  z-index: 6;
+}
+
 .collectionCard.is-playing {
   box-shadow:
     0 0 0 1px var(--accent),
@@ -169,9 +217,6 @@
 }
 
 .collectionCard__playtime.is-playing {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   color: var(--text-default);
 }
 
@@ -182,6 +227,91 @@
   background: var(--success, #3ecf8e);
   box-shadow: 0 0 6px var(--success, #3ecf8e);
   animation: collectionPlayingPulse 1.6s ease-in-out infinite;
+}
+
+.collection--focused .collectionCard {
+  aspect-ratio: auto;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.collection--focused .collectionCard[data-invisible] {
+  aspect-ratio: 2 / 3;
+}
+
+.collection--focused .collectionCard__cover {
+  position: relative;
+  inset: auto;
+  overflow: hidden;
+  border-radius: 6px;
+  aspect-ratio: 2 / 3;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.38);
+}
+
+.collection--focused .collectionCard__link {
+  aspect-ratio: 2 / 3;
+  height: 100%;
+}
+
+.collection--focused .collectionCard__statusDot,
+.collection--focused .collectionCard.is-focused::before,
+.collection--focused .collectionCard.is-playing::after {
+  display: none;
+}
+
+.collection--focused .collectionCard.is-focused,
+.collection--focused .collectionCard.is-playing {
+  box-shadow: none;
+}
+
+.collection--focused .collectionCard.is-focused .collectionCard__cover {
+  box-shadow:
+    0 0 0 2px #e8dcc0,
+    0 10px 24px rgba(0, 0, 0, 0.42);
+}
+
+.collection--focused .collectionCard.is-playing .collectionCard__cover {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 10px 24px rgba(0, 0, 0, 0.42);
+}
+
+.collection--focused .collectionCard__playtime {
+  position: static;
+  display: inline-flex;
+  margin-top: 6px;
+  background: none;
+  padding: 0 1px;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+.collection--focused .collectionCard__playtime.is-empty {
+  display: inline-flex;
+}
+
+.collection--focused .collectionCard__clock {
+  display: block;
+}
+
+.collection--focused .collectionCard__title {
+  display: none;
+}
+
+.collection--focused .collectionCard__bar {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  padding: 0.35rem;
+  justify-content: flex-end;
+}
+
+.collection--focused .collectionCard__playBtn svg {
+  width: 24px;
+  height: 24px;
 }
 
 @keyframes collectionPlayingPulse {

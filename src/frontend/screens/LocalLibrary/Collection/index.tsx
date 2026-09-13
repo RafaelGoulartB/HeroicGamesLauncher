@@ -23,8 +23,10 @@ import type {
 import ContextProvider from 'frontend/state/ContextProvider'
 import SearchBar from 'frontend/components/UI/SearchBar'
 import FormControl from 'frontend/components/UI/FormControl'
+import { CachedImage } from 'frontend/components/UI'
 import { configStore, timestampStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
+import CollectionFocus from './CollectionFocus'
 import CollectionSettingsDialog from './CollectionSettingsDialog'
 import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
@@ -76,12 +78,25 @@ function applySidebarHidden(hidden: boolean) {
   document.getElementById('app')?.classList.toggle(SIDEBAR_HIDDEN_CLASS, hidden)
 }
 
+function gameKey(game: GameInfo) {
+  return `${game.runner}_${game.app_name}`
+}
+
 function playtimeMinutes(appName: string): number {
   return timestampStore.get_nodefault(appName)?.totalPlayed ?? 0
 }
 
 function lastPlayedAt(appName: string): string {
   return timestampStore.get_nodefault(appName)?.lastPlayed ?? ''
+}
+
+function stageArt(game: GameInfo) {
+  return (
+    game.art_background ||
+    game.overrides?.art_cover ||
+    game.art_cover ||
+    game.art_square
+  )
 }
 
 export default function Collection() {
@@ -97,6 +112,8 @@ export default function Collection() {
   const [groupByStatus, setGroupByStatus] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
+  const [stageGame, setStageGame] = useState<GameInfo | null>(null)
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -148,6 +165,14 @@ export default function Collection() {
     loadRecent()
     const removeListener = window.api.handleRecentGamesChanged(loadRecent)
     return () => removeListener()
+  }, [])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocusedKey(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
   const games = useMemo(() => {
@@ -219,6 +244,22 @@ export default function Collection() {
     return { buckets, unknown }
   }, [filtered, metas, statuses])
 
+  const focusedGame = useMemo(() => {
+    if (!focusedKey) return null
+    return games.find((game) => gameKey(game) === focusedKey) ?? null
+  }, [focusedKey, games])
+
+  const paintedGame = focusedGame ?? stageGame
+
+  useEffect(() => {
+    if (focusedGame) {
+      setStageGame(focusedGame)
+      return
+    }
+    const timer = window.setTimeout(() => setStageGame(null), 520)
+    return () => window.clearTimeout(timer)
+  }, [focusedGame])
+
   useEffect(() => {
     if (!filtered.length) return
     const observer = new IntersectionObserver(
@@ -246,7 +287,17 @@ export default function Collection() {
       .forEach((card) => observer.observe(card))
 
     return () => observer.disconnect()
-  }, [filtered, groupByStatus, statuses, metas, sort])
+  }, [filtered, groupByStatus, statuses, metas, sort, focusedKey])
+
+  useEffect(() => {
+    if (!focusedKey) return
+    const timer = window.setTimeout(() => {
+      listRef.current
+        ?.querySelector('.collectionCard.is-focused')
+        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }, 240)
+    return () => window.clearTimeout(timer)
+  }, [focusedKey])
 
   async function handleStatusChange(game: GameInfo, statusId: string) {
     const next = await window.api.localLibrary.setStatus({
@@ -264,18 +315,35 @@ export default function Collection() {
   function renderCards(list: GameInfo[]) {
     return list.map((game) => (
       <CollectionCard
-        key={`${game.runner}_${game.app_name}`}
+        key={gameKey(game)}
         gameInfo={game}
         meta={metas[game.app_name]}
         statuses={statuses}
         isRecent={recentAppNames.has(game.app_name)}
+        isFocused={focusedKey === gameKey(game)}
+        onSelect={() => setFocusedKey(gameKey(game))}
         onStatusChange={(statusId) => handleStatusChange(game, statusId)}
       />
     ))
   }
 
   return (
-    <div className={classNames('collection', { allTilesInColor })}>
+    <div
+      className={classNames('collection', {
+        allTilesInColor,
+        'collection--focused': Boolean(focusedGame)
+      })}
+    >
+      {paintedGame && stageArt(paintedGame) && (
+        <div className="collection__stage" aria-hidden>
+          <CachedImage
+            src={stageArt(paintedGame)}
+            className="collection__stageArt"
+            alt=""
+          />
+          <div className="collection__stageScrim" />
+        </div>
+      )}
       <header className="collection__header">
         <div className="collection__heading">
           <button
@@ -369,43 +437,51 @@ export default function Collection() {
         </div>
       </header>
 
-      <div className="collection__body" ref={listRef}>
-        {groupByStatus ? (
-          statuses.map((status) => {
-            const list = grouped.buckets.get(status.id) ?? []
-            if (!list.length) return null
-            return (
-              <section key={status.id} className="collection__group">
-                <h5>
-                  <span
-                    className="collection__dot"
-                    style={{
-                      background: STATUS_COLORS[status.slug]
-                    }}
-                  />
-                  {status.name}
-                  <span className="collection__count">{list.length}</span>
-                </h5>
-                <div className="collection__grid">{renderCards(list)}</div>
-              </section>
-            )
-          })
-        ) : (
-          <div className="collection__grid">{renderCards(filtered)}</div>
-        )}
-        {groupByStatus && grouped.unknown.length > 0 && (
-          <section className="collection__group">
-            <h5>
-              {t('collection.ungrouped', 'Other')}
-              <span className="collection__count">
-                {grouped.unknown.length}
-              </span>
-            </h5>
-            <div className="collection__grid">
-              {renderCards(grouped.unknown)}
-            </div>
-          </section>
-        )}
+      <div className="collection__workspace">
+        <div className="collection__list" ref={listRef}>
+          {groupByStatus ? (
+            statuses.map((status) => {
+              const list = grouped.buckets.get(status.id) ?? []
+              if (!list.length) return null
+              return (
+                <section key={status.id} className="collection__group">
+                  <h5>
+                    <span
+                      className="collection__dot"
+                      style={{
+                        background: STATUS_COLORS[status.slug]
+                      }}
+                    />
+                    {status.name}
+                    <span className="collection__count">{list.length}</span>
+                  </h5>
+                  <div className="collection__grid">{renderCards(list)}</div>
+                </section>
+              )
+            })
+          ) : (
+            <div className="collection__grid">{renderCards(filtered)}</div>
+          )}
+          {groupByStatus && grouped.unknown.length > 0 && (
+            <section className="collection__group">
+              <h5>
+                {t('collection.ungrouped', 'Other')}
+                <span className="collection__count">
+                  {grouped.unknown.length}
+                </span>
+              </h5>
+              <div className="collection__grid">
+                {renderCards(grouped.unknown)}
+              </div>
+            </section>
+          )}
+        </div>
+        <CollectionFocus
+          game={paintedGame}
+          meta={paintedGame ? metas[paintedGame.app_name] : undefined}
+          statuses={statuses}
+          onClose={() => setFocusedKey(null)}
+        />
       </div>
       {settingsOpen && (
         <CollectionSettingsDialog onClose={() => setSettingsOpen(false)} />
