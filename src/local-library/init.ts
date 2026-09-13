@@ -10,6 +10,13 @@ import {
 import { exportPlayniteLibrary } from './export'
 import { refreshLocalInstallStates } from './install-state'
 import { openSteamClientUri } from './steam'
+import {
+  clearCollectionGameArt,
+  getAllCollectionArt,
+  setCollectionGameArt
+} from './art'
+import { cacheSteamHero, warmSteamHeroes } from './heroes'
+import { initLocalArtProtocol } from './protocol'
 import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
 import {
   getCollectionSettings,
@@ -69,6 +76,12 @@ export function registerLocalLibraryIpc() {
   addHandler('openSteamClientUri', (_e, args) =>
     openSteamClientUri(args.action, args.steamAppId)
   )
+  addHandler('cacheSteamHero', (_e, steamAppId) => cacheSteamHero(steamAppId))
+  addHandler('getAllCollectionArt', () => getAllCollectionArt())
+  addHandler('setCollectionGameArt', (_e, args) => setCollectionGameArt(args))
+  addHandler('clearCollectionGameArt', (_e, args) =>
+    clearCollectionGameArt(args)
+  )
   addHandler('getCollectionSettings', async () => {
     const settings = getCollectionSettings()
     const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
@@ -94,6 +107,7 @@ export function registerLocalLibraryIpc() {
 
 export async function initLocalLibrary() {
   registerLocalLibraryIpc()
+  initLocalArtProtocol()
   logInfo(
     'Collection overlay: Ludusavi backup handler registered',
     LogPrefix.Backend
@@ -102,5 +116,10 @@ export async function initLocalLibrary() {
   backfillMissingGameStatuses()
   await refreshLocalInstallStates()
   void refreshMissingLocalCovers()
+  void warmSteamHeroes(
+    Object.values(getAllLocalGameMeta())
+      .map((meta) => meta.steamAppId)
+      .filter((id): id is string => Boolean(id))
+  )
   void maybeRunScheduledBackup()
 }
