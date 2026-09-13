@@ -3,7 +3,7 @@ import { normalizeTitle } from '../playnite/mapper'
 export function titleQueries(title: string): string[] {
   const cleaned = title.replaceAll('_', ' ').replace(/\s+/g, ' ').trim()
   const noEdition = cleaned.replace(
-    /\s*[\-–:]\s*(definitive|ultimate|complete|goty|deluxe|gold|standard|windows|linux).*$/i,
+    /\s*[-–:]\s*(definitive|ultimate|complete|goty|deluxe|gold|standard|windows|linux).*$/i,
     ''
   )
   const colon = cleaned.replace(/\s+-\s+/g, ': ')

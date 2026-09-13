@@ -29,7 +29,7 @@ export function hasFieldValue(
   if (field === 'criticScore') return typeof metadata.criticScore === 'number'
   if (field === 'cover') return Boolean(metadata.coverUrl)
   if (field === 'hero') return Boolean(metadata.heroUrl)
-  const values = metadata[field as ArrayField]
+  const values = metadata[field]
   return Array.isArray(values) && values.length > 0
 }
 
@@ -44,7 +44,7 @@ export function readField(
   if (field === 'criticScore') return metadata.criticScore
   if (field === 'cover') return metadata.coverUrl
   if (field === 'hero') return metadata.heroUrl
-  return metadata[field as ArrayField]
+  return metadata[field]
 }
 
 function writeField(
