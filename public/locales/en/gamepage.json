@@ -104,11 +104,13 @@
         "focus": {
             "details": "Details",
             "features": "Features",
+            "installFolder": "Installation Folder",
             "library": "Library",
             "local": "Local",
             "none": "No game selected",
             "notes": "Notes",
-            "overview": "Overview"
+            "overview": "Overview",
+            "tags": "Tags"
         },
         "gameArt": {
             "title": "Game images"

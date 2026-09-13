@@ -139,18 +139,24 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 22.5rem);
+  grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 30rem);
   gap: 2.4rem;
   align-items: start;
 }
 
 .collectionFocus__overview h3,
-.collectionFocus__panel h3 {
+.collectionFocus__panel h3,
+.collectionFocus__details > h3 {
   margin: 0 0 0.7rem;
   font-size: 1.05rem;
   font-weight: 650;
   color: #fff;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+.collectionFocus__details > h3 {
+  margin: 0 0 0.55rem 0.2rem;
+  font-weight: 600;
 }
 
 .collectionFocus__overview p,
@@ -203,6 +209,14 @@
   background: rgba(12, 14, 18, 0.42);
   backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.collectionFocus__panel--facts {
+  padding: 0.65rem 1rem 0.8rem;
+  border-radius: 12px;
+  background: rgba(18, 22, 28, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(22px);
 }
 
 .collectionFocus__panel h3 {
@@ -261,15 +275,27 @@
 .collectionFocus__hltb > div,
 .collectionFocus__facts > div {
   display: grid;
-  grid-template-columns: 7.25rem minmax(0, 1fr);
-  gap: var(--space-sm);
-  padding: 5px 0;
+  grid-template-columns: 8.4rem minmax(0, 1fr);
+  gap: 0.55rem 0.85rem;
+  padding: 0.38rem 0;
   font-size: 13px;
+  align-items: start;
 }
 
 .collectionFocus__hltb dt,
 .collectionFocus__facts dt {
   color: rgba(255, 255, 255, 0.52);
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  line-height: 1.4;
+}
+
+.collectionFocus__facts dt svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  opacity: 0.72;
 }
 
 .collectionFocus__hltb dd,
@@ -278,10 +304,70 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  color: rgba(255, 255, 255, 0.94);
+  min-width: 0;
+}
+
+.collectionFocus__facts dd {
+  flex-wrap: wrap;
+  overflow: visible;
+  white-space: normal;
+}
+
+.collectionFocus__hltb dd {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.92);
+}
+
+.collectionFocus__facts > div.is-split {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 0.4rem;
+  padding-top: 0.7rem;
+}
+
+.collectionFocus__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.collectionFocus__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.42rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.48);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.collectionFocus__install {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.collectionFocus__install span {
+  word-break: break-word;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.collectionFocus__install em {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.collectionFocus__tags {
+  max-height: 4.6rem;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 62%, transparent);
 }
 
 .collectionFocus__facts dd.is-wrap {

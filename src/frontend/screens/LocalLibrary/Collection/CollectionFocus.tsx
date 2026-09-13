@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Close,
   Download,
+  FolderOpen,
   OpenInNew,
   PlayArrow,
   Settings,
@@ -61,6 +62,27 @@ type Props = {
   cachedHeroUrl?: string
   onArtChange: (art: CollectionGameArt) => void
   onClose: () => void
+}
+
+function splitNames(value?: string) {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function FactChips({ items }: { items: string[] }) {
+  if (!items.length) return null
+  return (
+    <dd className="collectionFocus__chips">
+      {items.map((item) => (
+        <span key={item} className="collectionFocus__chip">
+          {item}
+        </span>
+      ))}
+    </dd>
+  )
 }
 
 function toPlainText(value?: string) {
@@ -283,6 +305,12 @@ function CollectionFocusPanel({
     wikiInfo?.pcgamingwiki?.releaseDate?.[0]?.replace(/^[^:]+:\s*/, '')
   const developer = steamDetails?.developers.join(', ') || gameInfo.developer
   const publisher = steamDetails?.publishers.join(', ')
+  const developers = steamDetails?.developers?.length
+    ? steamDetails.developers
+    : splitNames(developer)
+  const publishers = steamDetails?.publishers?.length
+    ? steamDetails.publishers
+    : splitNames(publisher)
   const features = steamDetails?.features ?? []
   const platform = gameInfo.install?.platform || 'PC'
   const sourceLabel = libraryLabel(
@@ -295,6 +323,7 @@ function CollectionFocusPanel({
     meta?.windowsInstallDirectory ||
     gameInfo.install?.install_path ||
     gameInfo.folder_name
+  const installSize = gameInfo.install?.install_size
   const lastPlayed = formatTimestamp(
     timestampStore.get_nodefault(appName)?.lastPlayed
   )
@@ -488,66 +517,89 @@ function CollectionFocusPanel({
               </section>
             )}
 
-            <section className="collectionFocus__panel">
+            <section className="collectionFocus__details">
               <h3>{t('collection.focus.details', 'Details')}</h3>
-              <dl className="collectionFocus__facts">
-                {completion && (
+              <div className="collectionFocus__panel collectionFocus__panel--facts">
+                <dl className="collectionFocus__facts">
+                  {completion && (
+                    <div>
+                      <dt>{t('collection.status.menu', 'Status')}</dt>
+                      <dd>
+                        <span
+                          className="collectionFocus__dot"
+                          style={{ background: STATUS_COLORS[completion.slug] }}
+                        />
+                        {completion.name}
+                      </dd>
+                    </div>
+                  )}
+                  {developers.length > 0 && (
+                    <div>
+                      <dt>{tGame('info.developer', 'Developer')}</dt>
+                      <FactChips items={developers} />
+                    </div>
+                  )}
+                  {publishers.length > 0 && (
+                    <div>
+                      <dt>{tGame('info.publisher', 'Publisher')}</dt>
+                      <FactChips items={publishers} />
+                    </div>
+                  )}
                   <div>
-                    <dt>{t('collection.status.menu', 'Status')}</dt>
-                    <dd>
-                      <span
-                        className="collectionFocus__dot"
-                        style={{ background: STATUS_COLORS[completion.slug] }}
-                      />
-                      {completion.name}
-                    </dd>
+                    <dt>{t('collection.focus.library', 'Library')}</dt>
+                    <dd>{sourceLabel}</dd>
                   </div>
-                )}
-                {developer && (
                   <div>
-                    <dt>{tGame('info.developer', 'Developer')}</dt>
-                    <dd>{developer}</dd>
+                    <dt>{tGame('game.lastPlayed', 'Last Played')}</dt>
+                    <dd>{lastPlayed || tGame('game.neverPlayed', 'Never')}</dd>
                   </div>
-                )}
-                {publisher && (
                   <div>
-                    <dt>{tGame('info.publisher', 'Publisher')}</dt>
-                    <dd>{publisher}</dd>
+                    <dt>{t('collection.sort.playtime', 'Playtime')}</dt>
+                    <dd>{formatPlaytimeMinutes(playedMinutes)}</dd>
                   </div>
-                )}
-                <div>
-                  <dt>{t('collection.focus.library', 'Library')}</dt>
-                  <dd>{sourceLabel}</dd>
-                </div>
-                <div>
-                  <dt>{tGame('game.lastPlayed', 'Last Played')}</dt>
-                  <dd>{lastPlayed || tGame('game.neverPlayed', 'Never')}</dd>
-                </div>
-                <div>
-                  <dt>{t('collection.sort.playtime', 'Playtime')}</dt>
-                  <dd>{formatPlaytimeMinutes(playedMinutes)}</dd>
-                </div>
-                {installPath && (
-                  <div>
-                    <dt>{tGame('info.path', 'Install Path')}</dt>
-                    <dd title={installPath}>{installPath}</dd>
-                  </div>
-                )}
-                {features.length > 0 && (
-                  <div>
-                    <dt>{t('collection.focus.features', 'Features')}</dt>
-                    <dd className="is-wrap">
-                      {features.slice(0, 6).join(', ')}
-                    </dd>
-                  </div>
-                )}
-                {meta?.notes && (
-                  <div>
-                    <dt>{t('collection.focus.notes', 'Notes')}</dt>
-                    <dd className="is-wrap">{meta.notes}</dd>
-                  </div>
-                )}
-              </dl>
+                  {installPath && (
+                    <div className="is-split">
+                      <dt>
+                        <FolderOpen />
+                        {t(
+                          'collection.focus.installFolder',
+                          'Installation Folder'
+                        )}
+                      </dt>
+                      <dd className="collectionFocus__install">
+                        <span title={installPath}>{installPath}</span>
+                        {installSize && installSize !== '0' && (
+                          <em>{installSize}</em>
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                  {features.length > 0 && (
+                    <div className="is-split">
+                      <dt>{t('collection.focus.features', 'Features')}</dt>
+                      <FactChips items={features.slice(0, 8)} />
+                    </div>
+                  )}
+                  {genres.length > 0 && (
+                    <div className="is-split">
+                      <dt>{t('collection.focus.tags', 'Tags')}</dt>
+                      <dd className="collectionFocus__chips collectionFocus__tags">
+                        {genres.map((genre) => (
+                          <span key={genre} className="collectionFocus__chip">
+                            {genre}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+                  {meta?.notes && (
+                    <div className="is-split">
+                      <dt>{t('collection.focus.notes', 'Notes')}</dt>
+                      <dd className="is-wrap">{meta.notes}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
             </section>
           </div>
         </div>
