@@ -26,9 +26,3 @@
 .collectionSortMenu .dropdown button.collectionSortMenu__item.is-active {
   color: var(--accent);
 }
-
-.collectionSortMenu
-  .dropdown
-  button.collectionSortMenu__item:hover:not(:disabled) {
-  background: var(--navbar-active-background, var(--accent));
-}

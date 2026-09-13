@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import 'frontend/components/UI/Dropdown/index.scss'
+import './CollectionDropdown.css'
 
 type Props = {
   title?: ReactNode | string
@@ -52,7 +53,7 @@ export default function CollectionDropdown({
 
   return (
     <div
-      className={`dropdownContainer ${className || ''}`}
+      className={`dropdownContainer collectionDropdown ${className || ''}`}
       onMouseEnter={() => handlePopup('enter')}
       onMouseLeave={() => handlePopup('leave')}
     >

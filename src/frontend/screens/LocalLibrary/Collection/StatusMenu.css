@@ -22,9 +22,3 @@
   font-size: var(--text-sm);
   text-transform: none;
 }
-
-.collectionStatusMenu
-  .dropdown
-  button.collectionStatusMenu__item:hover:not(:disabled) {
-  background: var(--navbar-active-background, var(--accent));
-}

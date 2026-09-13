@@ -23,12 +23,6 @@
   text-transform: none;
 }
 
-.collectionPlayniteMenu
-  .dropdown
-  button.collectionPlayniteMenu__item:hover:not(:disabled) {
-  background: var(--navbar-active-background, var(--accent));
-}
-
 .collectionPlayniteMenu .dropdown button.collectionPlayniteMenu__item:disabled {
   opacity: 0.5;
   cursor: default;

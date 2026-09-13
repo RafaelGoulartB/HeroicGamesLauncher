@@ -36,12 +36,6 @@
 
 .collectionInstallFilterMenu
   .dropdown
-  button.collectionInstallFilterMenu__item:hover:not(:disabled) {
-  background: var(--navbar-active-background, var(--accent));
-}
-
-.collectionInstallFilterMenu
-  .dropdown
   button.collectionInstallFilterMenu__item
   svg {
   width: 0.9rem;
