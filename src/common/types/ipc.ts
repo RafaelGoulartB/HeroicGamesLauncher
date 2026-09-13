@@ -291,6 +291,9 @@ interface AsyncIPCFunctions {
     kind: CollectionArtKind
   }) => Promise<CollectionGameArt>
   getCollectionSettings: () => Promise<CollectionSettings>
+  setCollectionUiSettings: (args: {
+    greyUninstalledGames: boolean
+  }) => Promise<CollectionSettings>
   setCollectionBackupSettings: (args: {
     folder: string
     interval: CollectionBackupInterval

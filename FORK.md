@@ -40,7 +40,8 @@ opens the Steam client (`steam://install/<id>` / `steam://uninstall/<id>`)
 from overlay code. Official Library, UninstallModal, and sideload uninstall
 are unchanged.
 
-Collection settings (gear on the Collection header) store backup folder,
-schedule, and Ludusavi options in `local_library/settings.json`. On boot, a
+Collection settings (gear on the Collection header) store appearance (grey
+uninstalled covers), backup folder, schedule, and Ludusavi options in
+`local_library/settings.json`. On boot, a
 filtered copy of `~/.config/heroic` is written to `heroic-YYYY-MM-DD` when due.
 If Ludusavi auto-backup is on, saves are backed up after a game closes.

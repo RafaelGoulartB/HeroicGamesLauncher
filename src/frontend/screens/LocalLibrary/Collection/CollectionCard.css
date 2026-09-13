@@ -49,11 +49,13 @@
     opacity 0.5s;
 }
 
-.collectionCard__image:not(.installed) {
+.collection--greyUninstalled .collectionCard__image:not(.installed) {
   filter: grayscale(var(--installing-effect, 100%));
 }
 
-.collectionCard:hover .collectionCard__image:not(.installed),
+.collection--greyUninstalled
+  .collectionCard:hover
+  .collectionCard__image:not(.installed),
 .allTilesInColor .collectionCard__image {
   filter: grayscale(0);
 }

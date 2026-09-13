@@ -3,6 +3,15 @@
   width: auto;
 }
 
+.collectionInstallFilterMenu .dropdownButton svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  font-size: 0.9rem;
+  max-width: 0.9rem;
+  max-height: 0.9rem;
+  overflow: hidden;
+}
+
 .collectionInstallFilterMenu .dropdown {
   min-width: 220px;
   z-index: 20;

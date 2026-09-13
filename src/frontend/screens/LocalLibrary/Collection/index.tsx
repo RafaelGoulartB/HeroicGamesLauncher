@@ -97,6 +97,7 @@ export default function Collection() {
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [greyUninstalledGames, setGreyUninstalledGames] = useState(true)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const [heroCache, setHeroCache] = useState<Record<string, string>>({})
@@ -123,14 +124,16 @@ export default function Collection() {
   }
 
   async function reload() {
-    const [nextStatuses, nextMetas, nextArt] = await Promise.all([
+    const [nextStatuses, nextMetas, nextArt, nextSettings] = await Promise.all([
       window.api.localLibrary.getStatuses(),
       window.api.localLibrary.getAllMeta(),
-      window.api.localLibrary.getAllCollectionArt()
+      window.api.localLibrary.getAllCollectionArt(),
+      window.api.localLibrary.getSettings()
     ])
     setStatuses(nextStatuses)
     setMetas(nextMetas)
     setCollectionArt(nextArt)
+    setGreyUninstalledGames(nextSettings.greyUninstalledGames !== false)
   }
 
   useEffect(() => {
@@ -348,7 +351,8 @@ export default function Collection() {
   return (
     <div
       className={classNames('collection collection--focused', {
-        allTilesInColor
+        allTilesInColor,
+        'collection--greyUninstalled': greyUninstalledGames
       })}
     >
       {paintedArt && (
@@ -382,18 +386,12 @@ export default function Collection() {
           >
             {sidebarHidden ? <Menu /> : <MenuOpen />}
           </button>
-        </div>
-        <div className="collection__toolbarCenter">
           <InstallFilterMenu
             value={installFilter}
             onChange={handleInstallFilter}
           />
-          <SortMenu value={sort} onChange={handleSort} />
-          <StatusMenu
-            groupByStatus={groupByStatus}
-            onGroupByStatusChange={setGroupByStatus}
-            onStatusesChanged={() => void reload()}
-          />
+        </div>
+        <div className="collection__toolbarCenter">
           <label className="collection__search">
             <FontAwesomeIcon
               className="collection__searchIcon"
@@ -409,6 +407,12 @@ export default function Collection() {
               onChange={(event) => handleSearch(event.target.value)}
             />
           </label>
+          <SortMenu value={sort} onChange={handleSort} />
+          <StatusMenu
+            groupByStatus={groupByStatus}
+            onGroupByStatusChange={setGroupByStatus}
+            onStatusesChanged={() => void reload()}
+          />
         </div>
         <div className="collection__toolbarRight">
           <PlayniteMenu onLibraryChanged={() => void reload()} />
@@ -491,7 +495,12 @@ export default function Collection() {
         />
       </div>
       {settingsOpen && (
-        <CollectionSettingsDialog onClose={() => setSettingsOpen(false)} />
+        <CollectionSettingsDialog
+          onClose={() => setSettingsOpen(false)}
+          onSettingsChange={(next) => {
+            setGreyUninstalledGames(next.greyUninstalledGames !== false)
+          }}
+        />
       )}
     </div>
   )

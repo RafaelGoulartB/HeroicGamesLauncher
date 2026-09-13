@@ -231,6 +231,7 @@ export interface CollectionSettings {
   backup: CollectionBackupSettings
   ludusavi: LudusaviSettings
   ludusaviDetected?: LudusaviDetectedConfig
+  greyUninstalledGames: boolean
 }
 
 export type LudusaviBackupFormat = 'simple' | 'zip'

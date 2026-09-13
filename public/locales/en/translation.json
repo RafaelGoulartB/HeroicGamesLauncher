@@ -268,6 +268,7 @@
             "previewUnchanged": "Unchanged"
         },
         "settings": {
+            "appearance": "Appearance",
             "backup": "Backup",
             "backupDaily": "Once a day",
             "backupDone": "Backup saved to {{path}}",
@@ -280,6 +281,8 @@
             "backupRunning": "Backing up…",
             "backupSkipped": "Backup is already up to date.",
             "backupWeekly": "Once a week",
+            "greyUninstalled": "Fade uninstalled games",
+            "greyUninstalledHelp": "Uninstalled covers appear grey. Turn this off to keep their original colour.",
             "lastBackup": "Last backup",
             "lastSaveBackup": "Last save backup",
             "ludusavi": "Ludusavi save backup",

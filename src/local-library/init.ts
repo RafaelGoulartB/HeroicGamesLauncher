@@ -22,6 +22,7 @@ import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
 import {
   getCollectionSettings,
   setCollectionBackupSettings,
+  setCollectionUiSettings,
   setLudusaviSettings
 } from './settings'
 import { backupLudusaviForGame, detectLudusavi } from './ludusavi'
@@ -86,6 +87,11 @@ export function registerLocalLibraryIpc() {
   )
   addHandler('getCollectionSettings', async () => {
     const settings = getCollectionSettings()
+    const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
+    return { ...settings, ludusaviDetected }
+  })
+  addHandler('setCollectionUiSettings', async (_e, args) => {
+    const settings = setCollectionUiSettings(args)
     const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
     return { ...settings, ludusaviDetected }
   })
