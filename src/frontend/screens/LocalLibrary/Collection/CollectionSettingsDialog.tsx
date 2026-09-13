@@ -22,6 +22,7 @@ import './CollectionSettingsDialog.css'
 
 type Props = {
   onClose: () => void
+  onSettingsChange?: (settings: CollectionSettings) => void
 }
 
 function formatBackupTime(value?: string) {
@@ -34,11 +35,15 @@ function formatBackupTime(value?: string) {
   }).format(date)
 }
 
-export default function CollectionSettingsDialog({ onClose }: Props) {
+export default function CollectionSettingsDialog({
+  onClose,
+  onSettingsChange
+}: Props) {
   const { t } = useTranslation()
   const [settings, setSettings] = useState<CollectionSettings | null>(null)
   const [folder, setFolder] = useState('')
   const [interval, setInterval] = useState<CollectionBackupInterval>('weekly')
+  const [greyUninstalledGames, setGreyUninstalledGames] = useState(true)
   const [ludusaviEnabled, setLudusaviEnabled] = useState(false)
   const [useInstalledConfig, setUseInstalledConfig] = useState(true)
   const [ludusaviBinary, setLudusaviBinary] = useState('')
@@ -63,11 +68,29 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
     setLudusaviFolder(next.ludusavi.backupPath)
     setLudusaviFormat(next.ludusavi.format)
     setLudusaviCompression(next.ludusavi.compression)
+    setGreyUninstalledGames(next.greyUninstalledGames !== false)
   }
 
   useEffect(() => {
     void reload()
   }, [])
+
+  async function persistUi(nextGrey = greyUninstalledGames) {
+    setSaving(true)
+    setError('')
+    try {
+      const next = await window.api.localLibrary.setUiSettings({
+        greyUninstalledGames: nextGrey
+      })
+      setSettings(next)
+      setGreyUninstalledGames(next.greyUninstalledGames)
+      onSettingsChange?.(next)
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function persist(nextFolder = folder, nextInterval = interval) {
     setSaving(true)
@@ -162,6 +185,30 @@ export default function CollectionSettingsDialog({ onClose }: Props) {
         {t('collection.settings.title', 'Collection settings')}
       </DialogHeader>
       <DialogContent className="CollectionSettingsDialog__content">
+        <section className="CollectionSettingsDialog__section">
+          <h4>{t('collection.settings.appearance', 'Appearance')}</h4>
+          <ToggleSwitch
+            htmlId="collection-grey-uninstalled"
+            value={greyUninstalledGames}
+            disabled={saving}
+            handleChange={() => {
+              const next = !greyUninstalledGames
+              setGreyUninstalledGames(next)
+              void persistUi(next)
+            }}
+            title={t(
+              'collection.settings.greyUninstalled',
+              'Fade uninstalled games'
+            )}
+          />
+          <p className="CollectionSettingsDialog__meta">
+            {t(
+              'collection.settings.greyUninstalledHelp',
+              'Uninstalled covers appear grey. Turn this off to keep their original colour.'
+            )}
+          </p>
+        </section>
+
         <section className="CollectionSettingsDialog__section">
           <h4>{t('collection.settings.backup', 'Backup')}</h4>
           <p>

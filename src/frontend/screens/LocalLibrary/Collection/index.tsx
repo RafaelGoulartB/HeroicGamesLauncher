@@ -8,35 +8,34 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import classNames from 'classnames'
-import {
-  faBorderAll,
-  faHardDrive as hardDriveSolid
-} from '@fortawesome/free-solid-svg-icons'
-import { faHardDrive as hardDriveLight } from '@fortawesome/free-regular-svg-icons'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu, MenuOpen, Settings } from '@mui/icons-material'
 import type { GameInfo } from 'common/types'
 import type {
+  CollectionGameArt,
   CompletionStatus,
   LocalGameMeta
 } from 'common/types/local-library'
 import ContextProvider from 'frontend/state/ContextProvider'
-import SearchBar from 'frontend/components/UI/SearchBar'
-import FormControl from 'frontend/components/UI/FormControl'
+import { CachedImage } from 'frontend/components/UI'
 import { configStore, timestampStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
+import CollectionFocus from './CollectionFocus'
 import CollectionSettingsDialog from './CollectionSettingsDialog'
+import InstallFilterMenu, { type InstallFilter } from './InstallFilterMenu'
 import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
+import { collectionArtKey, collectionStageArt } from './steamArt'
 import './index.css'
-
-type InstallFilter = 'all' | 'installed' | 'uninstalled'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
 const SORT_KEY = 'collection_sort'
 const SIDEBAR_HIDDEN_KEY = 'collection_sidebar_hidden'
+const COLLAPSED_GROUPS_KEY = 'collection_collapsed_groups'
+const UNKNOWN_GROUP_ID = 'ungrouped'
 const storage: Storage = window.localStorage
 const SIDEBAR_HIDDEN_CLASS = 'collectionSidebarHidden'
 
@@ -72,8 +71,26 @@ function readSidebarHidden(): boolean {
   return storage.getItem(SIDEBAR_HIDDEN_KEY) === '1'
 }
 
+function readCollapsedGroups(): Set<string> {
+  try {
+    const stored = storage.getItem(COLLAPSED_GROUPS_KEY)
+    if (!stored) return new Set()
+    const parsed: unknown = JSON.parse(stored)
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(
+      parsed.filter((item): item is string => typeof item === 'string')
+    )
+  } catch {
+    return new Set()
+  }
+}
+
 function applySidebarHidden(hidden: boolean) {
   document.getElementById('app')?.classList.toggle(SIDEBAR_HIDDEN_CLASS, hidden)
+}
+
+function gameKey(game: GameInfo) {
+  return `${game.runner}_${game.app_name}`
 }
 
 function playtimeMinutes(appName: string): number {
@@ -95,8 +112,16 @@ export default function Collection() {
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
+  const [collapsedGroups, setCollapsedGroups] =
+    useState<Set<string>>(readCollapsedGroups)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [greyUninstalledGames, setGreyUninstalledGames] = useState(true)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
+  const [heroCache, setHeroCache] = useState<Record<string, string>>({})
+  const [collectionArt, setCollectionArt] = useState<
+    Record<string, CollectionGameArt>
+  >({})
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -116,13 +141,27 @@ export default function Collection() {
     setSort(next)
   }
 
+  function toggleGroup(id: string) {
+    setCollapsedGroups((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      storage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify([...next]))
+      return next
+    })
+  }
+
   async function reload() {
-    const [nextStatuses, nextMetas] = await Promise.all([
+    const [nextStatuses, nextMetas, nextArt, nextSettings] = await Promise.all([
       window.api.localLibrary.getStatuses(),
-      window.api.localLibrary.getAllMeta()
+      window.api.localLibrary.getAllMeta(),
+      window.api.localLibrary.getAllCollectionArt(),
+      window.api.localLibrary.getSettings()
     ])
     setStatuses(nextStatuses)
     setMetas(nextMetas)
+    setCollectionArt(nextArt)
+    setGreyUninstalledGames(nextSettings.greyUninstalledGames !== false)
   }
 
   useEffect(() => {
@@ -149,6 +188,17 @@ export default function Collection() {
     const removeListener = window.api.handleRecentGamesChanged(loadRecent)
     return () => removeListener()
   }, [])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (settingsOpen) return
+        setFocusedKey(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [settingsOpen])
 
   const games = useMemo(() => {
     const all: GameInfo[] = [
@@ -219,6 +269,43 @@ export default function Collection() {
     return { buckets, unknown }
   }, [filtered, metas, statuses])
 
+  const focusedGame = useMemo(() => {
+    if (!focusedKey) return null
+    return games.find((game) => gameKey(game) === focusedKey) ?? null
+  }, [focusedKey, games])
+
+  const paintedGame = focusedGame
+  const paintedMeta = paintedGame ? metas[paintedGame.app_name] : undefined
+  const paintedArt = paintedGame
+    ? collectionStageArt(
+        paintedGame,
+        paintedMeta,
+        paintedMeta?.steamAppId ? heroCache[paintedMeta.steamAppId] : undefined,
+        collectionArt[
+          collectionArtKey(paintedGame.runner, paintedGame.app_name)
+        ]?.heroUrl
+      )
+    : null
+
+  useEffect(() => {
+    const steamAppId = paintedMeta?.steamAppId
+    if (!steamAppId) return
+    const cacheHero = window.api.localLibrary.cacheSteamHero
+    if (typeof cacheHero !== 'function') return
+    let cancelled = false
+    void cacheHero(steamAppId).then((result) => {
+      if (cancelled || !result?.url) return
+      setHeroCache((current) =>
+        current[steamAppId] === result.url
+          ? current
+          : { ...current, [steamAppId]: result.url }
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [paintedMeta?.steamAppId])
+
   useEffect(() => {
     if (!filtered.length) return
     const observer = new IntersectionObserver(
@@ -245,8 +332,35 @@ export default function Collection() {
       ?.querySelectorAll('[data-invisible]')
       .forEach((card) => observer.observe(card))
 
-    return () => observer.disconnect()
-  }, [filtered, groupByStatus, statuses, metas, sort])
+    const frame = window.requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelectorAll('[data-invisible]')
+        .forEach((card) => observer.observe(card))
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [
+    filtered,
+    groupByStatus,
+    statuses,
+    metas,
+    sort,
+    focusedKey,
+    collapsedGroups
+  ])
+
+  useEffect(() => {
+    if (!focusedKey) return
+    const timer = window.setTimeout(() => {
+      listRef.current
+        ?.querySelector('.collectionCard.is-focused')
+        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }, 240)
+    return () => window.clearTimeout(timer)
+  }, [focusedKey])
 
   async function handleStatusChange(game: GameInfo, statusId: string) {
     const next = await window.api.localLibrary.setStatus({
@@ -264,23 +378,45 @@ export default function Collection() {
   function renderCards(list: GameInfo[]) {
     return list.map((game) => (
       <CollectionCard
-        key={`${game.runner}_${game.app_name}`}
+        key={gameKey(game)}
         gameInfo={game}
         meta={metas[game.app_name]}
+        collectionArt={
+          collectionArt[collectionArtKey(game.runner, game.app_name)]
+        }
         statuses={statuses}
         isRecent={recentAppNames.has(game.app_name)}
+        isFocused={focusedKey === gameKey(game)}
+        onSelect={() => setFocusedKey(gameKey(game))}
         onStatusChange={(statusId) => handleStatusChange(game, statusId)}
       />
     ))
   }
 
   return (
-    <div className={classNames('collection', { allTilesInColor })}>
+    <div
+      className={classNames('collection collection--focused', {
+        allTilesInColor,
+        'collection--greyUninstalled': greyUninstalledGames
+      })}
+    >
+      {paintedArt && (
+        <div className="collection__stage" aria-hidden>
+          <CachedImage
+            key={paintedArt.src}
+            src={paintedArt.src}
+            fallback={paintedArt.fallback}
+            className="collection__stageArt"
+            alt=""
+          />
+          <div className="collection__stageScrim" />
+        </div>
+      )}
       <header className="collection__header">
-        <div className="collection__heading">
+        <div className="collection__toolbarLeft">
           <button
             type="button"
-            className="collection__iconBtn"
+            className="collection__toolBtn"
             title={
               sidebarHidden
                 ? t('collection.showSidebar', 'Show sidebar')
@@ -296,70 +432,39 @@ export default function Collection() {
           >
             {sidebarHidden ? <Menu /> : <MenuOpen />}
           </button>
-          <h5 className="collection__title">
-            {t('collection.title', 'Collection')}
-            <span className="collection__count">{filtered.length}</span>
-          </h5>
+          <InstallFilterMenu
+            value={installFilter}
+            onChange={handleInstallFilter}
+          />
         </div>
-        <div className="collection__controls">
-          <div className="collection__search">
-            <SearchBar
-              onInputChanged={handleSearch}
-              value={search}
-              placeholder={t('search', 'Search for Games')}
+        <div className="collection__toolbarCenter">
+          <label className="collection__search">
+            <FontAwesomeIcon
+              className="collection__searchIcon"
+              icon={faSearch}
             />
-          </div>
-          <FormControl segmented small>
-            <button
-              className={classNames('FormControl__button', {
-                active: installFilter === 'all'
-              })}
-              title={t('collection.filter.all', 'All games')}
-              onClick={() => handleInstallFilter('all')}
-            >
-              <FontAwesomeIcon
-                className="FormControl__segmentedFaIcon"
-                icon={faBorderAll}
-              />
-            </button>
-            <button
-              className={classNames('FormControl__button', {
-                active: installFilter === 'installed'
-              })}
-              title={t('collection.filter.installed', 'Installed')}
-              onClick={() => handleInstallFilter('installed')}
-            >
-              <FontAwesomeIcon
-                className="FormControl__segmentedFaIcon"
-                icon={hardDriveSolid}
-              />
-            </button>
-            <button
-              className={classNames('FormControl__button', {
-                active: installFilter === 'uninstalled'
-              })}
-              title={t(
-                'collection.filter.uninstalled',
-                'Not installed / Uninstalled'
-              )}
-              onClick={() => handleInstallFilter('uninstalled')}
-            >
-              <FontAwesomeIcon
-                className="FormControl__segmentedFaIcon"
-                icon={hardDriveLight}
-              />
-            </button>
-          </FormControl>
+            <input
+              id="search"
+              className="collection__searchInput"
+              data-testid="searchInput"
+              aria-label={t('search', 'Search for Games')}
+              placeholder={t('search', 'Search for Games')}
+              value={search}
+              onChange={(event) => handleSearch(event.target.value)}
+            />
+          </label>
           <SortMenu value={sort} onChange={handleSort} />
-          <PlayniteMenu onLibraryChanged={() => void reload()} />
           <StatusMenu
             groupByStatus={groupByStatus}
             onGroupByStatusChange={setGroupByStatus}
             onStatusesChanged={() => void reload()}
           />
+        </div>
+        <div className="collection__toolbarRight">
+          <PlayniteMenu onLibraryChanged={() => void reload()} />
           <button
             type="button"
-            className="collection__iconBtn"
+            className="collection__toolBtn"
             title={t('collection.settings.title', 'Collection settings')}
             aria-label={t('collection.settings.title', 'Collection settings')}
             onClick={() => setSettingsOpen(true)}
@@ -369,46 +474,105 @@ export default function Collection() {
         </div>
       </header>
 
-      <div className="collection__body" ref={listRef}>
-        {groupByStatus ? (
-          statuses.map((status) => {
-            const list = grouped.buckets.get(status.id) ?? []
-            if (!list.length) return null
-            return (
-              <section key={status.id} className="collection__group">
-                <h5>
-                  <span
-                    className="collection__dot"
-                    style={{
-                      background: STATUS_COLORS[status.slug]
-                    }}
-                  />
-                  {status.name}
-                  <span className="collection__count">{list.length}</span>
-                </h5>
-                <div className="collection__grid">{renderCards(list)}</div>
-              </section>
+      <div className="collection__workspace">
+        <div className="collection__list" ref={listRef}>
+          {groupByStatus ? (
+            statuses.map((status) => {
+              const list = grouped.buckets.get(status.id) ?? []
+              if (!list.length) return null
+              return (
+                <section
+                  key={status.id}
+                  className={classNames('collection__group', {
+                    'is-collapsed': collapsedGroups.has(status.id)
+                  })}
+                >
+                  <button
+                    type="button"
+                    className="collection__groupToggle"
+                    aria-expanded={!collapsedGroups.has(status.id)}
+                    onClick={() => toggleGroup(status.id)}
+                  >
+                    <span
+                      className="collection__dot"
+                      style={{
+                        background: STATUS_COLORS[status.slug]
+                      }}
+                    />
+                    {status.name}
+                    <span className="collection__count">{list.length}</span>
+                  </button>
+                  <div className="collection__grid">{renderCards(list)}</div>
+                </section>
+              )
+            })
+          ) : (
+            <div className="collection__grid">{renderCards(filtered)}</div>
+          )}
+          {groupByStatus && grouped.unknown.length > 0 && (
+            <section
+              className={classNames('collection__group', {
+                'is-collapsed': collapsedGroups.has(UNKNOWN_GROUP_ID)
+              })}
+            >
+              <button
+                type="button"
+                className="collection__groupToggle"
+                aria-expanded={!collapsedGroups.has(UNKNOWN_GROUP_ID)}
+                onClick={() => toggleGroup(UNKNOWN_GROUP_ID)}
+              >
+                {t('collection.ungrouped', 'Other')}
+                <span className="collection__count">
+                  {grouped.unknown.length}
+                </span>
+              </button>
+              <div className="collection__grid">
+                {renderCards(grouped.unknown)}
+              </div>
+            </section>
+          )}
+        </div>
+        <CollectionFocus
+          game={paintedGame}
+          meta={paintedGame ? metas[paintedGame.app_name] : undefined}
+          collectionArt={
+            paintedGame
+              ? collectionArt[
+                  collectionArtKey(paintedGame.runner, paintedGame.app_name)
+                ]
+              : undefined
+          }
+          cachedHeroUrl={
+            paintedMeta?.steamAppId
+              ? heroCache[paintedMeta.steamAppId]
+              : undefined
+          }
+          statuses={statuses}
+          onArtChange={(next) => {
+            if (!paintedGame) return
+            const key = collectionArtKey(
+              paintedGame.runner,
+              paintedGame.app_name
             )
-          })
-        ) : (
-          <div className="collection__grid">{renderCards(filtered)}</div>
-        )}
-        {groupByStatus && grouped.unknown.length > 0 && (
-          <section className="collection__group">
-            <h5>
-              {t('collection.ungrouped', 'Other')}
-              <span className="collection__count">
-                {grouped.unknown.length}
-              </span>
-            </h5>
-            <div className="collection__grid">
-              {renderCards(grouped.unknown)}
-            </div>
-          </section>
-        )}
+            setCollectionArt((current) => {
+              if (!next.coverUrl && !next.heroUrl) {
+                const rest = { ...current }
+                delete rest[key]
+                return rest
+              }
+              return { ...current, [key]: next }
+            })
+          }}
+          onClose={() => setFocusedKey(null)}
+        />
       </div>
       {settingsOpen && (
-        <CollectionSettingsDialog onClose={() => setSettingsOpen(false)} />
+        <CollectionSettingsDialog
+          onClose={() => setSettingsOpen(false)}
+          onSettingsChange={(next) => {
+            setGreyUninstalledGames(next.greyUninstalledGames !== false)
+          }}
+        />
       )}
     </div>
   )

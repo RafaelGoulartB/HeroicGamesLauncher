@@ -189,6 +189,49 @@ export type SteamClientUriAction = 'install' | 'uninstall'
 
 export type SteamClientUriResult = { ok: true } | { ok: false; error: string }
 
+export interface SteamHeroCacheResult {
+  url: string
+  path: string
+  fromCache: boolean
+}
+
+export interface CollectionSteamDetails {
+  steamAppId: string
+  language: string
+  name: string
+  shortDescription: string
+  descriptionHtml: string
+  developers: string[]
+  publishers: string[]
+  genres: string[]
+  features: string[]
+  releaseDate?: string
+  website?: string
+  storeUrl: string
+}
+
+export type CollectionArtKind = 'cover' | 'hero'
+
+export interface CollectionGameArt {
+  coverUrl?: string
+  heroUrl?: string
+}
+
+export type CollectionWebImageSource = 'duckduckgo'
+
+export interface CollectionWebImage {
+  imageUrl: string
+  thumbUrl: string
+  width: number
+  height: number
+}
+
+export interface CollectionWebImageSearchArgs {
+  query: string
+  source?: CollectionWebImageSource
+  transparent?: boolean
+}
+
 export type CollectionBackupInterval = 'daily' | 'weekly' | 'monthly'
 
 export interface CollectionBackupSettings {
@@ -203,6 +246,7 @@ export interface CollectionSettings {
   backup: CollectionBackupSettings
   ludusavi: LudusaviSettings
   ludusaviDetected?: LudusaviDetectedConfig
+  greyUninstalledGames: boolean
 }
 
 export type LudusaviBackupFormat = 'simple' | 'zip'

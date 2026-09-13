@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import Dropdown from 'frontend/components/UI/Dropdown'
+import { SortByAlpha } from '@mui/icons-material'
+import CollectionDropdown from './CollectionDropdown'
 import './SortMenu.css'
 
 export type CollectionSort = 'title' | 'lastPlayed' | 'playtime'
@@ -19,10 +20,17 @@ export default function SortMenu({ value, onChange }: Props) {
   }
 
   return (
-    <Dropdown
-      title={`${t('collection.sort.menu', 'Sort')}: ${labels[value]}`}
+    <CollectionDropdown
+      title={
+        <span
+          className="collection__toolLabel"
+          title={`${t('collection.sort.menu', 'Sort')}: ${labels[value]}`}
+        >
+          <SortByAlpha />
+        </span>
+      }
       className="collectionSortMenu"
-      buttonClass="selectStyle"
+      buttonClass="collection__toolBtn"
       popUpOnHover
     >
       {(Object.keys(labels) as CollectionSort[]).map((key) => (
@@ -35,6 +43,6 @@ export default function SortMenu({ value, onChange }: Props) {
           {labels[key]}
         </button>
       ))}
-    </Dropdown>
+    </CollectionDropdown>
   )
 }

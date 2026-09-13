@@ -1,9 +1,6 @@
 .collectionSortMenu {
   flex: 0 0 auto;
-}
-
-.collectionSortMenu .dropdownButton.selectStyle {
-  min-width: 160px;
+  width: auto;
 }
 
 .collectionSortMenu .dropdown {
@@ -28,10 +25,4 @@
 
 .collectionSortMenu .dropdown button.collectionSortMenu__item.is-active {
   color: var(--accent);
-}
-
-.collectionSortMenu
-  .dropdown
-  button.collectionSortMenu__item:hover:not(:disabled) {
-  background: var(--navbar-active-background, var(--accent));
 }

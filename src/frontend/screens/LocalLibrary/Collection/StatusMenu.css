@@ -1,9 +1,6 @@
 .collectionStatusMenu {
   flex: 0 0 auto;
-}
-
-.collectionStatusMenu .dropdownButton.selectStyle {
-  min-width: 140px;
+  width: auto;
 }
 
 .collectionStatusMenu .dropdown {
@@ -24,10 +21,4 @@
   cursor: pointer;
   font-size: var(--text-sm);
   text-transform: none;
-}
-
-.collectionStatusMenu
-  .dropdown
-  button.collectionStatusMenu__item:hover:not(:disabled) {
-  background: var(--navbar-active-background, var(--accent));
 }

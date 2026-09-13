@@ -10,10 +10,21 @@ import {
 import { exportPlayniteLibrary } from './export'
 import { refreshLocalInstallStates } from './install-state'
 import { openSteamClientUri } from './steam'
+import {
+  clearCollectionGameArt,
+  getAllCollectionArt,
+  setCollectionGameArt,
+  setCollectionGameArtFromUrl
+} from './art'
+import { searchCollectionWebImages } from './web-images'
+import { cacheSteamHero, warmSteamHeroes } from './heroes'
+import { getSteamAppDetails } from './steam-details'
+import { initLocalArtProtocol } from './protocol'
 import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
 import {
   getCollectionSettings,
   setCollectionBackupSettings,
+  setCollectionUiSettings,
   setLudusaviSettings
 } from './settings'
 import { backupLudusaviForGame, detectLudusavi } from './ludusavi'
@@ -69,8 +80,26 @@ export function registerLocalLibraryIpc() {
   addHandler('openSteamClientUri', (_e, args) =>
     openSteamClientUri(args.action, args.steamAppId)
   )
+  addHandler('cacheSteamHero', (_e, steamAppId) => cacheSteamHero(steamAppId))
+  addHandler('getSteamAppDetails', (_e, args) => getSteamAppDetails(args))
+  addHandler('getAllCollectionArt', () => getAllCollectionArt())
+  addHandler('setCollectionGameArt', (_e, args) => setCollectionGameArt(args))
+  addHandler('searchCollectionWebImages', (_e, args) =>
+    searchCollectionWebImages(args)
+  )
+  addHandler('setCollectionGameArtFromUrl', (_e, args) =>
+    setCollectionGameArtFromUrl(args)
+  )
+  addHandler('clearCollectionGameArt', (_e, args) =>
+    clearCollectionGameArt(args)
+  )
   addHandler('getCollectionSettings', async () => {
     const settings = getCollectionSettings()
+    const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
+    return { ...settings, ludusaviDetected }
+  })
+  addHandler('setCollectionUiSettings', async (_e, args) => {
+    const settings = setCollectionUiSettings(args)
     const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
     return { ...settings, ludusaviDetected }
   })
@@ -94,6 +123,7 @@ export function registerLocalLibraryIpc() {
 
 export async function initLocalLibrary() {
   registerLocalLibraryIpc()
+  initLocalArtProtocol()
   logInfo(
     'Collection overlay: Ludusavi backup handler registered',
     LogPrefix.Backend
@@ -102,5 +132,10 @@ export async function initLocalLibrary() {
   backfillMissingGameStatuses()
   await refreshLocalInstallStates()
   void refreshMissingLocalCovers()
+  void warmSteamHeroes(
+    Object.values(getAllLocalGameMeta())
+      .map((meta) => meta.steamAppId)
+      .filter((id): id is string => Boolean(id))
+  )
   void maybeRunScheduledBackup()
 }

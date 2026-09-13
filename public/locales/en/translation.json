@@ -142,6 +142,7 @@
         "select": {
             "button": "Select",
             "exe": "Select EXE",
+            "image": "Select Image",
             "script": "Select script ..."
         },
         "shortcuts": {
@@ -222,7 +223,34 @@
         "filter": {
             "all": "All games",
             "installed": "Installed",
+            "menu": "Install filter",
             "uninstalled": "Not installed / Uninstalled"
+        },
+        "gameArt": {
+            "change": "Change",
+            "cover": "Cover",
+            "custom": "Custom image",
+            "default": "Default",
+            "empty": "No image",
+            "help": "These images are used in Collection. Steam art stays cached; a custom file replaces it until you reset.",
+            "hero": "Background",
+            "reset": "Reset",
+            "saving": "Saving…",
+            "searchWeb": "Search web",
+            "title": "Game images",
+            "webSearch": {
+                "downloadFailed": "Could not download the selected image.",
+                "empty": "No images found. Try another search.",
+                "failed": "Could not search images. Try another term.",
+                "help": "Pick an image from the web. Collection saves it like a file you selected yourself.",
+                "loading": "Searching…",
+                "more": "Load more",
+                "saving": "Downloading…",
+                "search": "Search",
+                "select": "Select",
+                "title": "Search images",
+                "transparent": "Transparent"
+            }
         },
         "group": "Group by status",
         "hideSidebar": "Hide sidebar",
@@ -254,6 +282,7 @@
             "previewUnchanged": "Unchanged"
         },
         "settings": {
+            "appearance": "Appearance",
             "backup": "Backup",
             "backupDaily": "Once a day",
             "backupDone": "Backup saved to {{path}}",
@@ -266,6 +295,8 @@
             "backupRunning": "Backing up…",
             "backupSkipped": "Backup is already up to date.",
             "backupWeekly": "Once a week",
+            "greyUninstalled": "Fade uninstalled games",
+            "greyUninstalledHelp": "Uninstalled covers appear grey. Turn this off to keep their original colour.",
             "lastBackup": "Last backup",
             "lastSaveBackup": "Last save backup",
             "ludusavi": "Ludusavi save backup",
@@ -301,7 +332,6 @@
             "moveUp": "Move up",
             "remove": "Remove"
         },
-        "title": "Collection",
         "ungrouped": "Other"
     },
     "console": {

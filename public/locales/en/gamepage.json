@@ -101,6 +101,20 @@
     },
     "cloud_save_unsupported": "Unsupported",
     "collection": {
+        "focus": {
+            "details": "Details",
+            "features": "Features",
+            "installFolder": "Installation Folder",
+            "library": "Library",
+            "local": "Local",
+            "none": "No game selected",
+            "notes": "Notes",
+            "overview": "Overview",
+            "tags": "Tags"
+        },
+        "gameArt": {
+            "title": "Game images"
+        },
         "ludusavi": {
             "backup": "Backup save (Ludusavi)",
             "busy": "Ludusavi is already backing up a save. Wait a moment and try again.",
@@ -108,6 +122,13 @@
             "donePath": "Saved a Ludusavi backup for {{title}} in {{path}}.",
             "restart": "Restart Heroic Local to load Ludusavi backup.",
             "running": "Backing up saves with Ludusavi…"
+        },
+        "notPlayed": "Not Played",
+        "sort": {
+            "playtime": "Playtime"
+        },
+        "status": {
+            "menu": "Status"
         },
         "steam": {
             "clientMissing": "Steam was not found. Install or launch the Steam client, then try again.",

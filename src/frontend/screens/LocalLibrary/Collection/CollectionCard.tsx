@@ -6,9 +6,10 @@ import {
   type CSSProperties
 } from 'react'
 import classNames from 'classnames'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
+  AccessTime,
   Cancel,
   DeleteForever,
   Description,
@@ -28,6 +29,7 @@ import {
 } from '@mui/icons-material'
 import type { FavouriteGame, GameInfo, HiddenGame, Runner } from 'common/types'
 import type {
+  CollectionGameArt,
   CompletionStatus,
   LocalGameMeta
 } from 'common/types/local-library'
@@ -48,18 +50,16 @@ import {
 import { updateGame } from 'frontend/helpers/library'
 import { hasProgress } from 'frontend/hooks/hasProgress'
 import { hasStatus } from 'frontend/hooks/hasStatus'
-import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import PlayIcon from 'frontend/assets/play-icon.svg?react'
 import StopIconAlt from 'frontend/assets/stop-icon-alt.svg?react'
 import DownIcon from 'frontend/assets/down-icon.svg?react'
-import {
-  getCardStatus,
-  getImageFormatting
-} from 'frontend/screens/Library/components/GameCard/constants'
+import { getCardStatus } from 'frontend/screens/Library/components/GameCard/constants'
+import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
+import { collectionCoverSrc } from './steamArt'
 import './CollectionCard.css'
 
 const storage: Storage = window.localStorage
@@ -67,16 +67,22 @@ const storage: Storage = window.localStorage
 type Props = {
   gameInfo: GameInfo
   meta?: LocalGameMeta
+  collectionArt?: CollectionGameArt
   statuses: CompletionStatus[]
   isRecent?: boolean
+  isFocused?: boolean
+  onSelect: () => void
   onStatusChange: (statusId: string) => void
 }
 
 export default function CollectionCard({
   gameInfo: gameInfoFromProps,
   meta,
+  collectionArt,
   statuses,
   isRecent = false,
+  isFocused = false,
+  onSelect,
   onStatusChange
 }: Props) {
   const { t } = useTranslation('gamepage')
@@ -106,11 +112,11 @@ export default function CollectionCard({
     install: gameInstallInfo
   } = { ...gameInfoFromProps }
   const title = gameInfoFromProps.overrides?.title || gameInfoFromProps.title
-  const cover =
-    gameInfoFromProps.overrides?.art_square ||
-    gameInfoFromProps.art_square ||
-    gameInfoFromProps.art_cover ||
-    fallBackImage
+  const cover = collectionCoverSrc(
+    gameInfoFromProps,
+    collectionArt,
+    meta?.steamAppId
+  )
 
   const currentStatusId = meta?.completionStatusId ?? 'not-played'
   const completion =
@@ -172,9 +178,13 @@ export default function CollectionCard({
     return () => window.clearInterval(timer)
   }, [isTrackingTime, appName])
 
+  const playedTotal = (playedMinutes ?? 0) + liveExtraMinutes
   const playtimeLabel = useMemo(
-    () => formatPlaytimeMinutes((playedMinutes ?? 0) + liveExtraMinutes),
-    [playedMinutes, liveExtraMinutes]
+    () =>
+      playedTotal > 0
+        ? formatPlaytimeMinutes(playedTotal)
+        : t('collection.notPlayed', 'Not Played'),
+    [playedTotal, t]
   )
 
   const isHiddenGame = Boolean(
@@ -455,7 +465,7 @@ export default function CollectionCard({
     return null
   }
 
-  if (!visible && !isTrackingTime) {
+  if (!visible && !isTrackingTime && !isFocused) {
     return (
       <div
         className="collectionCard"
@@ -602,51 +612,60 @@ export default function CollectionCard({
         <div
           className={classNames('collectionCard', {
             installed: isInstalled,
-            'is-playing': isTrackingTime
+            'is-playing': isTrackingTime,
+            'is-focused': isFocused
           })}
         >
-          <Link
-            className="collectionCard__link"
-            to={`/gamepage/${runner}/${appName}`}
-            state={{ gameInfo, fromCollection: true }}
-            style={
-              { '--installing-effect': installingGrayscale } as CSSProperties
-            }
-          >
-            <CachedImage
-              src={getImageFormatting(cover, runner)}
-              className={classNames('collectionCard__image', {
-                installed: isInstalled
-              })}
-              alt={title}
-            />
-            <span
-              className={classNames('collectionCard__playtime', {
-                'is-playing': isTrackingTime
-              })}
-              title={
-                isTrackingTime
-                  ? t('collection.tracking', 'Counting playtime')
-                  : undefined
+          <div className="collectionCard__cover">
+            <button
+              type="button"
+              className="collectionCard__link"
+              onClick={onSelect}
+              aria-pressed={isFocused}
+              aria-label={title}
+              style={
+                { '--installing-effect': installingGrayscale } as CSSProperties
               }
             >
-              {isTrackingTime && <span className="collectionCard__liveDot" />}
-              {playtimeLabel}
-            </span>
-            {completion && (
-              <span
-                className="collectionCard__statusDot"
-                style={{ background: STATUS_COLORS[completion.slug] }}
-                title={completion.name}
+              <CachedImage
+                key={cover}
+                src={cover}
+                fallback={fallBackImage}
+                className={classNames('collectionCard__image', {
+                  installed: isInstalled
+                })}
+                alt={title}
               />
-            )}
-          </Link>
-          <div className="collectionCard__bar">
-            <span className="collectionCard__title">
-              <span>{title}</span>
-            </span>
-            {hoverPlayButton()}
+              {completion && (
+                <span
+                  className="collectionCard__statusDot"
+                  style={{ background: STATUS_COLORS[completion.slug] }}
+                  title={completion.name}
+                />
+              )}
+            </button>
+            <div className="collectionCard__bar">
+              <span className="collectionCard__title">
+                <span>{title}</span>
+              </span>
+              {hoverPlayButton()}
+            </div>
           </div>
+          <span
+            className={classNames('collectionCard__playtime', {
+              'is-playing': isTrackingTime,
+              'is-empty': playedTotal <= 0
+            })}
+            title={
+              isTrackingTime
+                ? t('collection.tracking', 'Counting playtime')
+                : undefined
+            }
+          >
+            <AccessTime className="collectionCard__clock" />
+            {isTrackingTime && <span className="collectionCard__liveDot" />}
+            {playtimeLabel}
+          </span>
         </div>
       </CollectionContextMenu>
     </>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Dropdown from 'frontend/components/UI/Dropdown'
+import { Flag } from '@mui/icons-material'
+import CollectionDropdown from './CollectionDropdown'
 import { ToggleSwitch } from 'frontend/components/UI'
 import ManageStatusesDialog from './ManageStatusesDialog'
 import './StatusMenu.css'
@@ -21,10 +22,17 @@ export default function StatusMenu({
 
   return (
     <>
-      <Dropdown
-        title={t('collection.status.menu', 'Status')}
+      <CollectionDropdown
+        title={
+          <span
+            className="collection__toolLabel"
+            title={t('collection.status.menu', 'Status')}
+          >
+            <Flag />
+          </span>
+        }
         className="collectionStatusMenu"
-        buttonClass="selectStyle"
+        buttonClass="collection__toolBtn"
         popUpOnHover
       >
         <ToggleSwitch
@@ -41,7 +49,7 @@ export default function StatusMenu({
         >
           {t('collection.status.manage', 'Manage statuses…')}
         </button>
-      </Dropdown>
+      </CollectionDropdown>
       {manageOpen && (
         <ManageStatusesDialog
           onClose={() => {

@@ -11,6 +11,7 @@ import type {
 type SettingsFile = {
   backup: CollectionBackupSettings
   ludusavi: LudusaviSettings
+  greyUninstalledGames: boolean
 }
 
 const settingsFile = new Store<SettingsFile>({
@@ -28,7 +29,8 @@ const settingsFile = new Store<SettingsFile>({
       backupPath: '',
       format: 'zip',
       compression: 'deflate'
-    }
+    },
+    greyUninstalledGames: true
   }
 })
 
@@ -88,8 +90,16 @@ export function getCollectionSettings(): CollectionSettings {
       lastBackupGame: ludusavi.lastBackupGame,
       lastBackupPath: ludusavi.lastBackupPath,
       lastError: ludusavi.lastError
-    }
+    },
+    greyUninstalledGames: settingsFile.get('greyUninstalledGames') !== false
   }
+}
+
+export function setCollectionUiSettings(args: {
+  greyUninstalledGames: boolean
+}): CollectionSettings {
+  settingsFile.set('greyUninstalledGames', args.greyUninstalledGames)
+  return getCollectionSettings()
 }
 
 export function setCollectionBackupSettings(args: {
