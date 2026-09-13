@@ -20,6 +20,20 @@
   pointer-events: auto;
 }
 
+.collectionFocus--empty {
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.collectionFocus--empty p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+
 .collectionFocus__tools {
   position: absolute;
   top: 0.85rem;

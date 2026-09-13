@@ -112,8 +112,13 @@ export default function CollectionFocus({
   onArtChange,
   onClose
 }: Props) {
+  const { t } = useTranslation()
   if (!game) {
-    return <aside className="collectionFocus" aria-hidden />
+    return (
+      <aside className="collectionFocus collectionFocus--empty">
+        <p>{t('collection.focus.none', 'No game selected')}</p>
+      </aside>
+    )
   }
 
   return (

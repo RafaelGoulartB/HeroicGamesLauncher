@@ -106,7 +106,6 @@ export default function Collection() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
-  const [stageGame, setStageGame] = useState<GameInfo | null>(null)
   const [heroCache, setHeroCache] = useState<Record<string, string>>({})
   const [collectionArt, setCollectionArt] = useState<
     Record<string, CollectionGameArt>
@@ -251,7 +250,7 @@ export default function Collection() {
     return games.find((game) => gameKey(game) === focusedKey) ?? null
   }, [focusedKey, games])
 
-  const paintedGame = focusedGame ?? stageGame
+  const paintedGame = focusedGame
   const paintedMeta = paintedGame ? metas[paintedGame.app_name] : undefined
   const paintedArt = paintedGame
     ? collectionStageArt(
@@ -282,15 +281,6 @@ export default function Collection() {
       cancelled = true
     }
   }, [paintedMeta?.steamAppId])
-
-  useEffect(() => {
-    if (focusedGame) {
-      setStageGame(focusedGame)
-      return
-    }
-    const timer = window.setTimeout(() => setStageGame(null), 520)
-    return () => window.clearTimeout(timer)
-  }, [focusedGame])
 
   useEffect(() => {
     if (!filtered.length) return
@@ -364,9 +354,8 @@ export default function Collection() {
 
   return (
     <div
-      className={classNames('collection', {
-        allTilesInColor,
-        'collection--focused': Boolean(focusedGame)
+      className={classNames('collection collection--focused', {
+        allTilesInColor
       })}
     >
       {paintedArt && (

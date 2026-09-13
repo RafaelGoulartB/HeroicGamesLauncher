@@ -106,6 +106,7 @@
             "features": "Features",
             "library": "Library",
             "local": "Local",
+            "none": "No game selected",
             "notes": "Notes",
             "overview": "Overview"
         },
