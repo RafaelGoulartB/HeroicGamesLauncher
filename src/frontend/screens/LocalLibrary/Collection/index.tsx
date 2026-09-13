@@ -35,6 +35,7 @@ const INSTALL_FILTER_KEY = 'collection_install_filter'
 const SORT_KEY = 'collection_sort'
 const SIDEBAR_HIDDEN_KEY = 'collection_sidebar_hidden'
 const COLLAPSED_GROUPS_KEY = 'collection_collapsed_groups'
+const FOCUSED_GAME_KEY = 'collection_focused_game'
 const UNKNOWN_GROUP_ID = 'ungrouped'
 const storage: Storage = window.localStorage
 const SIDEBAR_HIDDEN_CLASS = 'collectionSidebarHidden'
@@ -69,6 +70,15 @@ function readSort(): CollectionSort {
 
 function readSidebarHidden(): boolean {
   return storage.getItem(SIDEBAR_HIDDEN_KEY) === '1'
+}
+
+function readFocusedKey(): string | null {
+  const stored = storage.getItem(FOCUSED_GAME_KEY)
+  return stored || null
+}
+
+function persistFocusedKey(key: string) {
+  storage.setItem(FOCUSED_GAME_KEY, key)
 }
 
 function readCollapsedGroups(): Set<string> {
@@ -117,7 +127,7 @@ export default function Collection() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [greyUninstalledGames, setGreyUninstalledGames] = useState(true)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
-  const [focusedKey, setFocusedKey] = useState<string | null>(null)
+  const [focusedKey, setFocusedKey] = useState<string | null>(readFocusedKey)
   const [heroCache, setHeroCache] = useState<Record<string, string>>({})
   const [collectionArt, setCollectionArt] = useState<
     Record<string, CollectionGameArt>
@@ -360,7 +370,7 @@ export default function Collection() {
         ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }, 240)
     return () => window.clearTimeout(timer)
-  }, [focusedKey])
+  }, [focusedKey, filtered])
 
   async function handleStatusChange(game: GameInfo, statusId: string) {
     const next = await window.api.localLibrary.setStatus({
@@ -387,7 +397,11 @@ export default function Collection() {
         statuses={statuses}
         isRecent={recentAppNames.has(game.app_name)}
         isFocused={focusedKey === gameKey(game)}
-        onSelect={() => setFocusedKey(gameKey(game))}
+        onSelect={() => {
+          const key = gameKey(game)
+          persistFocusedKey(key)
+          setFocusedKey(key)
+        }}
         onStatusChange={(statusId) => handleStatusChange(game, statusId)}
       />
     ))
