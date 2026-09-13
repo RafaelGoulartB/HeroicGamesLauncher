@@ -91,6 +91,12 @@ function writeCache(details: CachedFile) {
   )
 }
 
+function withoutFetchedAt(cached: CachedFile): CollectionSteamDetails {
+  const { fetchedAt, ...details } = cached
+  void fetchedAt
+  return details
+}
+
 function mapDetails(
   steamAppId: string,
   language: string,
@@ -168,15 +174,13 @@ export async function getSteamAppDetails(args: {
 
   const cached = readCache(steamAppId, language)
   if (cached && Date.now() - cached.fetchedAt < CACHE_MS) {
-    const { fetchedAt: _fetchedAt, ...details } = cached
-    return details
+    return withoutFetchedAt(cached)
   }
 
   const blockedUntil = missingUntil.get(key)
   if (blockedUntil && blockedUntil > Date.now()) {
     if (cached) {
-      const { fetchedAt: _fetchedAt, ...details } = cached
-      return details
+      return withoutFetchedAt(cached)
     }
     return null
   }
@@ -193,8 +197,7 @@ export async function getSteamAppDetails(args: {
     }
     missingUntil.set(key, Date.now() + 30 * 60 * 1000)
     if (cached) {
-      const { fetchedAt: _fetchedAt, ...details } = cached
-      return details
+      return withoutFetchedAt(cached)
     }
     return null
   })().finally(() => pending.delete(key))
