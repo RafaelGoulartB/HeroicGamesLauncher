@@ -103,6 +103,7 @@
     "collection": {
         "focus": {
             "details": "Details",
+            "features": "Features",
             "library": "Library",
             "local": "Local",
             "notes": "Notes",

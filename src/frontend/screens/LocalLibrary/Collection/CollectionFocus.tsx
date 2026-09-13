@@ -20,6 +20,7 @@ import type {
 } from 'common/types'
 import type {
   CollectionGameArt,
+  CollectionSteamDetails,
   CompletionStatus,
   LocalGameMeta,
   LocalGameSource
@@ -37,6 +38,7 @@ import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import { collectionCoverSrc, collectionStageArt } from './steamArt'
+import { sanitizeSteamDescription } from './steamHtml'
 import CollectionGameArtDialog from './CollectionGameArtDialog'
 import './CollectionFocus.css'
 
@@ -148,8 +150,13 @@ function CollectionFocusPanel({
   const { t } = useTranslation()
   const { t: tGame } = useTranslation('gamepage')
   const navigate = useNavigate()
-  const { showDialogModal, connectivity, gameUpdates, favouriteGames } =
-    useContext(ContextProvider)
+  const {
+    showDialogModal,
+    connectivity,
+    gameUpdates,
+    favouriteGames,
+    language
+  } = useContext(ContextProvider)
   const [artOpen, setArtOpen] = useState(false)
 
   const [gameInfo, setGameInfo] = useState<GameInfo>(game)
@@ -157,6 +164,8 @@ function CollectionFocusPanel({
     game.extra ?? null
   )
   const [wikiInfo, setWikiInfo] = useState<WikiInfo | null>(null)
+  const [steamDetails, setSteamDetails] =
+    useState<CollectionSteamDetails | null>(null)
   const [achievements, setAchievements] = useState<GameAchievement[]>([])
   const [playedMinutes, setPlayedMinutes] = useState(
     () => timestampStore.get_nodefault(game.app_name)?.totalPlayed ?? 0
@@ -165,22 +174,38 @@ function CollectionFocusPanel({
   const { app_name: appName, runner, overrides } = game
   const title = overrides?.title || game.title
   const steamAppId = steamAppIdFromMeta(meta)
+  const storeAppId = meta?.steamAppId
 
   useEffect(() => {
     setGameInfo(game)
     setExtraInfo(game.extra ?? null)
     setWikiInfo(null)
+    setSteamDetails(null)
     setAchievements([])
     setPlayedMinutes(timestampStore.get_nodefault(appName)?.totalPlayed ?? 0)
 
     let cancelled = false
     const load = async () => {
-      const [fresh, extra, wiki, nextAchievements] = await Promise.allSettled([
-        getGameInfo(appName, runner),
-        window.api.getExtraInfo(appName, runner),
-        window.api.getWikiGameInfo(title, appName, runner),
-        window.api.getAchievements(appName, runner)
-      ])
+      const extraPromise =
+        runner === 'sideload'
+          ? Promise.resolve(null)
+          : window.api.getExtraInfo(appName, runner)
+      const steamPromise =
+        storeAppId &&
+        typeof window.api.localLibrary.getSteamDetails === 'function'
+          ? window.api.localLibrary.getSteamDetails({
+              steamAppId: storeAppId,
+              language
+            })
+          : Promise.resolve(null)
+      const [fresh, extra, wiki, nextAchievements, steam] =
+        await Promise.allSettled([
+          getGameInfo(appName, runner),
+          extraPromise,
+          window.api.getWikiGameInfo(title, appName, runner),
+          window.api.getAchievements(appName, runner),
+          steamPromise
+        ])
       if (cancelled) return
       if (fresh.status === 'fulfilled' && fresh.value) {
         setGameInfo(fresh.value)
@@ -190,12 +215,13 @@ function CollectionFocusPanel({
       if (nextAchievements.status === 'fulfilled') {
         setAchievements(nextAchievements.value ?? [])
       }
+      if (steam.status === 'fulfilled') setSteamDetails(steam.value)
     }
     void load()
     return () => {
       cancelled = true
     }
-  }, [appName, runner, title, game])
+  }, [appName, runner, title, game, storeAppId, language])
 
   const { status, folder } = hasStatus(gameInfo)
   const [progress, previousProgress] = hasProgress(appName, runner)
@@ -230,20 +256,29 @@ function CollectionFocusPanel({
   const cover = collectionCoverSrc(gameInfo, collectionArt) || fallBackImage
   const defaultCover = collectionCoverSrc(gameInfo)
   const defaultHero = collectionStageArt(gameInfo, meta, cachedHeroUrl)?.src
+  const descriptionHtml = steamDetails?.descriptionHtml
+    ? sanitizeSteamDescription(steamDetails.descriptionHtml)
+    : ''
   const description = toPlainText(
     extraInfo?.about?.shortDescription ||
       extraInfo?.about?.description ||
+      steamDetails?.shortDescription ||
       gameInfo.description
   )
   const genres = (
+    steamDetails?.genres ||
     extraInfo?.genres ||
     gameInfo.extra?.genres ||
     wikiInfo?.pcgamingwiki?.genres ||
     []
   ).filter(Boolean)
   const releaseDate =
+    steamDetails?.releaseDate ||
     extraInfo?.releaseDate ||
     wikiInfo?.pcgamingwiki?.releaseDate?.[0]?.replace(/^[^:]+:\s*/, '')
+  const developer = steamDetails?.developers.join(', ') || gameInfo.developer
+  const publisher = steamDetails?.publishers.join(', ')
+  const features = steamDetails?.features ?? []
   const platform = gameInfo.install?.platform || 'PC'
   const sourceLabel = libraryLabel(
     meta,
@@ -376,10 +411,17 @@ function CollectionFocusPanel({
         <div className="collectionFocus__body">
           <section className="collectionFocus__overview">
             <h3>{t('collection.focus.overview', 'Overview')}</h3>
-            <p>
-              {description ||
-                tGame('generic.noDescription', 'No description available')}
-            </p>
+            {descriptionHtml ? (
+              <div
+                className="collectionFocus__html"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            ) : (
+              <p>
+                {description ||
+                  tGame('generic.noDescription', 'No description available')}
+              </p>
+            )}
           </section>
 
           <div className="collectionFocus__aside">
@@ -456,10 +498,16 @@ function CollectionFocusPanel({
                     </dd>
                   </div>
                 )}
-                {gameInfo.developer && (
+                {developer && (
                   <div>
                     <dt>{tGame('info.developer', 'Developer')}</dt>
-                    <dd>{gameInfo.developer}</dd>
+                    <dd>{developer}</dd>
+                  </div>
+                )}
+                {publisher && (
+                  <div>
+                    <dt>{tGame('info.publisher', 'Publisher')}</dt>
+                    <dd>{publisher}</dd>
                   </div>
                 )}
                 <div>
@@ -480,10 +528,18 @@ function CollectionFocusPanel({
                     <dd title={installPath}>{installPath}</dd>
                   </div>
                 )}
+                {features.length > 0 && (
+                  <div>
+                    <dt>{t('collection.focus.features', 'Features')}</dt>
+                    <dd className="is-wrap">
+                      {features.slice(0, 6).join(', ')}
+                    </dd>
+                  </div>
+                )}
                 {meta?.notes && (
                   <div>
                     <dt>{t('collection.focus.notes', 'Notes')}</dt>
-                    <dd>{meta.notes}</dd>
+                    <dd className="is-wrap">{meta.notes}</dd>
                   </div>
                 )}
               </dl>
