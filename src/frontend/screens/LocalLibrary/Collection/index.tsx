@@ -10,11 +10,14 @@ import { useTranslation } from 'react-i18next'
 import classNames from 'classnames'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Menu, MenuOpen, Settings } from '@mui/icons-material'
+import { Menu, MenuOpen, Settings, CloudDownload } from '@mui/icons-material'
 import type { GameInfo } from 'common/types'
 import type {
   CollectionGameArt,
+  CollectionGameMetadata,
+  CollectionMetadataBulkProgress,
   CompletionStatus,
+  CoverAspectPreset,
   LocalGameMeta
 } from 'common/types/local-library'
 import ContextProvider from 'frontend/state/ContextProvider'
@@ -23,12 +26,17 @@ import { configStore, timestampStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
 import CollectionFocus from './CollectionFocus'
 import CollectionSettingsDialog from './CollectionSettingsDialog'
+import CollectionMetadataWizard from './CollectionMetadataWizard'
 import InstallFilterMenu, { type InstallFilter } from './InstallFilterMenu'
 import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
-import { collectionArtKey, collectionStageArt } from './steamArt'
+import {
+  collectionArtKey,
+  collectionMetadataKey,
+  collectionStageArt
+} from './steamArt'
 import './index.css'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
@@ -37,6 +45,16 @@ const SIDEBAR_HIDDEN_KEY = 'collection_sidebar_hidden'
 const COLLAPSED_GROUPS_KEY = 'collection_collapsed_groups'
 const FOCUSED_GAME_KEY = 'collection_focused_game'
 const UNKNOWN_GROUP_ID = 'ungrouped'
+const EMPTY_BULK: CollectionMetadataBulkProgress = {
+  state: 'idle',
+  total: 0,
+  processed: 0,
+  updated: 0,
+  skipped: 0,
+  failed: 0,
+  percent: 0,
+  errors: []
+}
 const storage: Storage = window.localStorage
 const SIDEBAR_HIDDEN_CLASS = 'collectionSidebarHidden'
 
@@ -132,6 +150,14 @@ export default function Collection() {
   const [collectionArt, setCollectionArt] = useState<
     Record<string, CollectionGameArt>
   >({})
+  const [collectionMetadata, setCollectionMetadata] = useState<
+    Record<string, CollectionGameMetadata>
+  >({})
+  const [coverAspect, setCoverAspect] = useState<CoverAspectPreset>('steam')
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [bulkProgress, setBulkProgress] =
+    useState<CollectionMetadataBulkProgress>(EMPTY_BULK)
+  const [bulkDismissed, setBulkDismissed] = useState(true)
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -162,20 +188,43 @@ export default function Collection() {
   }
 
   async function reload() {
-    const [nextStatuses, nextMetas, nextArt, nextSettings] = await Promise.all([
-      window.api.localLibrary.getStatuses(),
-      window.api.localLibrary.getAllMeta(),
-      window.api.localLibrary.getAllCollectionArt(),
-      window.api.localLibrary.getSettings()
-    ])
+    const [nextStatuses, nextMetas, nextArt, nextSettings, nextMetadata] =
+      await Promise.all([
+        window.api.localLibrary.getStatuses(),
+        window.api.localLibrary.getAllMeta(),
+        window.api.localLibrary.getAllCollectionArt(),
+        window.api.localLibrary.getSettings(),
+        window.api.localLibrary.getAllMetadata()
+      ])
     setStatuses(nextStatuses)
     setMetas(nextMetas)
     setCollectionArt(nextArt)
+    setCollectionMetadata(nextMetadata)
     setGreyUninstalledGames(nextSettings.greyUninstalledGames !== false)
+    setCoverAspect(nextSettings.metadata?.coverAspect || 'steam')
   }
 
   useEffect(() => {
     void reload()
+  }, [])
+
+  useEffect(() => {
+    void window.api.localLibrary.getMetadataBulkStatus().then((next) => {
+      setBulkProgress(next)
+      if (next.state === 'running' || next.state === 'cancelling') {
+        setBulkDismissed(false)
+      }
+    })
+    const remove = window.api.localLibrary.onMetadataBulkProgress(
+      (_event, next) => {
+        setBulkProgress(next)
+        if (next.state === 'running' || next.state === 'cancelling') {
+          setBulkDismissed(false)
+        }
+        if (next.state === 'done') void reload()
+      }
+    )
+    return () => remove()
   }, [])
 
   useEffect(() => {
@@ -202,13 +251,13 @@ export default function Collection() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (settingsOpen) return
+        if (settingsOpen || wizardOpen) return
         setFocusedKey(null)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [settingsOpen])
+  }, [settingsOpen, wizardOpen])
 
   const games = useMemo(() => {
     const all: GameInfo[] = [
@@ -293,6 +342,9 @@ export default function Collection() {
         paintedMeta?.steamAppId ? heroCache[paintedMeta.steamAppId] : undefined,
         collectionArt[
           collectionArtKey(paintedGame.runner, paintedGame.app_name)
+        ]?.heroUrl,
+        collectionMetadata[
+          collectionMetadataKey(paintedGame.runner, paintedGame.app_name)
         ]?.heroUrl
       )
     : null
@@ -394,6 +446,15 @@ export default function Collection() {
         collectionArt={
           collectionArt[collectionArtKey(game.runner, game.app_name)]
         }
+        metadata={
+          collectionMetadata[collectionMetadataKey(game.runner, game.app_name)]
+        }
+        onMetadataChange={(next) => {
+          setCollectionMetadata((current) => ({
+            ...current,
+            [collectionMetadataKey(game.runner, game.app_name)]: next
+          }))
+        }}
         statuses={statuses}
         isRecent={recentAppNames.has(game.app_name)}
         isFocused={focusedKey === gameKey(game)}
@@ -413,6 +474,7 @@ export default function Collection() {
         allTilesInColor,
         'collection--greyUninstalled': greyUninstalledGames
       })}
+      data-cover-aspect={coverAspect}
     >
       {paintedArt && (
         <div className="collection__stage" aria-hidden>
@@ -475,6 +537,26 @@ export default function Collection() {
           />
         </div>
         <div className="collection__toolbarRight">
+          {(bulkProgress.state === 'running' ||
+            bulkProgress.state === 'cancelling' ||
+            (bulkProgress.state === 'done' && !bulkDismissed)) && (
+            <button
+              type="button"
+              className="collection__toolBtn collection__bulkBtn"
+              title={t('collection.metadata.wizard.title', 'Download metadata')}
+              aria-label={t(
+                'collection.metadata.wizard.title',
+                'Download metadata'
+              )}
+              onClick={() => {
+                setBulkDismissed(false)
+                setWizardOpen(true)
+              }}
+            >
+              <CloudDownload />
+              <span>{bulkProgress.percent}%</span>
+            </button>
+          )}
           <PlayniteMenu onLibraryChanged={() => void reload()} />
           <button
             type="button"
@@ -556,6 +638,24 @@ export default function Collection() {
                 ]
               : undefined
           }
+          metadata={
+            paintedGame
+              ? collectionMetadata[
+                  collectionMetadataKey(
+                    paintedGame.runner,
+                    paintedGame.app_name
+                  )
+                ]
+              : undefined
+          }
+          onMetadataChange={(next) => {
+            if (!paintedGame) return
+            setCollectionMetadata((current) => ({
+              ...current,
+              [collectionMetadataKey(paintedGame.runner, paintedGame.app_name)]:
+                next
+            }))
+          }}
           cachedHeroUrl={
             paintedMeta?.steamAppId
               ? heroCache[paintedMeta.steamAppId]
@@ -585,6 +685,31 @@ export default function Collection() {
           onClose={() => setSettingsOpen(false)}
           onSettingsChange={(next) => {
             setGreyUninstalledGames(next.greyUninstalledGames !== false)
+            setCoverAspect(next.metadata?.coverAspect || 'steam')
+          }}
+          onOpenMetadataWizard={() => {
+            setSettingsOpen(false)
+            setBulkDismissed(false)
+            setWizardOpen(true)
+          }}
+        />
+      )}
+      {wizardOpen && (
+        <CollectionMetadataWizard
+          games={filtered.map((game) => ({
+            appName: game.app_name,
+            runner: game.runner === 'zoom' ? 'sideload' : game.runner,
+            title: game.overrides?.title || game.title,
+            steamAppId: metas[game.app_name]?.steamAppId
+          }))}
+          progress={bulkProgress}
+          onProgress={(next) => {
+            setBulkProgress(next)
+            setBulkDismissed(false)
+          }}
+          onHide={() => {
+            setWizardOpen(false)
+            if (bulkProgress.state === 'done') setBulkDismissed(true)
           }}
         />
       )}

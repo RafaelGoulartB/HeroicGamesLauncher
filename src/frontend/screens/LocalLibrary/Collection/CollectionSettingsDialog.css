@@ -33,6 +33,18 @@
   color: var(--success, var(--text-default)) !important;
 }
 
+.CollectionSettingsDialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.CollectionSettingsDialog__priority {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-xs);
+}
+
 .CollectionSettingsDialog__error {
   color: var(--danger, #e74c3c) !important;
 }

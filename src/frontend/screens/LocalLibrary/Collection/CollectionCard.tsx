@@ -23,6 +23,7 @@ import {
   PlaylistRemove,
   Save,
   Settings,
+  TravelExplore,
   Upgrade,
   Visibility,
   VisibilityOff
@@ -30,6 +31,7 @@ import {
 import type { FavouriteGame, GameInfo, HiddenGame, Runner } from 'common/types'
 import type {
   CollectionGameArt,
+  CollectionGameMetadata,
   CompletionStatus,
   LocalGameMeta
 } from 'common/types/local-library'
@@ -58,6 +60,7 @@ import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
+import CollectionMetadataDialog from './CollectionMetadataDialog'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import { collectionCoverSrc } from './steamArt'
 import './CollectionCard.css'
@@ -68,22 +71,26 @@ type Props = {
   gameInfo: GameInfo
   meta?: LocalGameMeta
   collectionArt?: CollectionGameArt
+  metadata?: CollectionGameMetadata
   statuses: CompletionStatus[]
   isRecent?: boolean
   isFocused?: boolean
   onSelect: () => void
   onStatusChange: (statusId: string) => void
+  onMetadataChange: (metadata: CollectionGameMetadata) => void
 }
 
 export default function CollectionCard({
   gameInfo: gameInfoFromProps,
   meta,
   collectionArt,
+  metadata,
   statuses,
   isRecent = false,
   isFocused = false,
   onSelect,
-  onStatusChange
+  onStatusChange,
+  onMetadataChange
 }: Props) {
   const { t } = useTranslation('gamepage')
   const navigate = useNavigate()
@@ -104,6 +111,7 @@ export default function CollectionCard({
   const [gameInfo, setGameInfo] = useState<GameInfo>(gameInfoFromProps)
   const [visible, setVisible] = useState(false)
   const [showUninstallModal, setShowUninstallModal] = useState(false)
+  const [metadataOpen, setMetadataOpen] = useState(false)
 
   const {
     app_name: appName,
@@ -115,7 +123,8 @@ export default function CollectionCard({
   const cover = collectionCoverSrc(
     gameInfoFromProps,
     collectionArt,
-    meta?.steamAppId
+    meta?.steamAppId,
+    metadata?.coverUrl
   )
 
   const currentStatusId = meta?.completionStatusId ?? 'not-played'
@@ -485,6 +494,16 @@ export default function CollectionCard({
           onClose={() => setShowUninstallModal(false)}
         />
       )}
+      {metadataOpen && (
+        <CollectionMetadataDialog
+          game={gameInfo}
+          title={title}
+          steamAppId={meta?.steamAppId}
+          metadata={metadata}
+          onChange={onMetadataChange}
+          onClose={() => setMetadataOpen(false)}
+        />
+      )}
       <CollectionContextMenu
         statuses={statuses.map((item) => ({
           id: item.id,
@@ -544,6 +563,12 @@ export default function CollectionCard({
             onclick: () => openGameSettingsModal(gameInfo),
             show: isInstalled && !isUninstalling && !isBrowserGame,
             icon: <Settings />
+          },
+          {
+            label: t('collection.metadata.title', 'Collection metadata'),
+            onclick: () => setMetadataOpen(true),
+            show: true,
+            icon: <TravelExplore />
           },
           {
             label: t('submenu.logs', 'Logs'),

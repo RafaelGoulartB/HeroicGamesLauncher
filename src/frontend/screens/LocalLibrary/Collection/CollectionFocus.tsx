@@ -10,7 +10,8 @@ import {
   Settings,
   Star,
   StarBorder,
-  Stop
+  Stop,
+  TravelExplore
 } from '@mui/icons-material'
 import type {
   ExtraInfo,
@@ -21,6 +22,7 @@ import type {
 } from 'common/types'
 import type {
   CollectionGameArt,
+  CollectionGameMetadata,
   CollectionSteamDetails,
   CompletionStatus,
   LocalGameMeta,
@@ -41,6 +43,7 @@ import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import { collectionCoverSrc, collectionStageArt } from './steamArt'
 import { sanitizeSteamDescription } from './steamHtml'
 import CollectionGameArtDialog from './CollectionGameArtDialog'
+import CollectionMetadataDialog from './CollectionMetadataDialog'
 import './CollectionFocus.css'
 
 const SOURCE_LABELS: Record<LocalGameSource, string> = {
@@ -59,8 +62,10 @@ type Props = {
   meta?: LocalGameMeta
   statuses: CompletionStatus[]
   collectionArt?: CollectionGameArt
+  metadata?: CollectionGameMetadata
   cachedHeroUrl?: string
   onArtChange: (art: CollectionGameArt) => void
+  onMetadataChange: (metadata: CollectionGameMetadata) => void
   onClose: () => void
 }
 
@@ -104,8 +109,9 @@ function formatHours(value?: number) {
 
 function formatTimestamp(value?: string) {
   if (!value) return ''
+  if (/^\d{4}$/.test(value)) return value
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
+  if (Number.isNaN(date.getTime())) return value
   return date.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'numeric',
@@ -130,8 +136,10 @@ export default function CollectionFocus({
   meta,
   statuses,
   collectionArt,
+  metadata,
   cachedHeroUrl,
   onArtChange,
+  onMetadataChange,
   onClose
 }: Props) {
   const { t } = useTranslation()
@@ -150,8 +158,10 @@ export default function CollectionFocus({
       meta={meta}
       statuses={statuses}
       collectionArt={collectionArt}
+      metadata={metadata}
       cachedHeroUrl={cachedHeroUrl}
       onArtChange={onArtChange}
+      onMetadataChange={onMetadataChange}
       onClose={onClose}
     />
   )
@@ -162,16 +172,20 @@ function CollectionFocusPanel({
   meta,
   statuses,
   collectionArt,
+  metadata,
   cachedHeroUrl,
   onArtChange,
+  onMetadataChange,
   onClose
 }: {
   game: GameInfo
   meta?: LocalGameMeta
   statuses: CompletionStatus[]
   collectionArt?: CollectionGameArt
+  metadata?: CollectionGameMetadata
   cachedHeroUrl?: string
   onArtChange: (art: CollectionGameArt) => void
+  onMetadataChange: (metadata: CollectionGameMetadata) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -185,6 +199,7 @@ function CollectionFocusPanel({
     language
   } = useContext(ContextProvider)
   const [artOpen, setArtOpen] = useState(false)
+  const [metadataOpen, setMetadataOpen] = useState(false)
 
   const [gameInfo, setGameInfo] = useState<GameInfo>(game)
   const [extraInfo, setExtraInfo] = useState<ExtraInfo | null>(
@@ -262,15 +277,16 @@ function CollectionFocusPanel({
   )
 
   useEffect(() => {
-    if (!artOpen) return
+    if (!artOpen && !metadataOpen) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.stopImmediatePropagation()
       setArtOpen(false)
+      setMetadataOpen(false)
     }
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [artOpen])
+  }, [artOpen, metadataOpen])
 
   useEffect(() => {
     setPlayedMinutes(timestampStore.get_nodefault(appName)?.totalPlayed ?? 0)
@@ -281,19 +297,29 @@ function CollectionFocusPanel({
     statuses.find((item) => item.slug === 'not-played')
 
   const cover =
-    collectionCoverSrc(gameInfo, collectionArt, storeAppId) || fallBackImage
+    collectionCoverSrc(
+      gameInfo,
+      collectionArt,
+      storeAppId,
+      metadata?.coverUrl
+    ) || fallBackImage
   const defaultCover = collectionCoverSrc(gameInfo, undefined, storeAppId)
   const defaultHero = collectionStageArt(gameInfo, meta, cachedHeroUrl)?.src
-  const descriptionHtml = steamDetails?.descriptionHtml
-    ? sanitizeSteamDescription(steamDetails.descriptionHtml)
-    : ''
+  const useSteamHtml =
+    metadata?.fieldSources.description === 'steam' || !metadata?.description
+  const descriptionHtml =
+    useSteamHtml && steamDetails?.descriptionHtml
+      ? sanitizeSteamDescription(steamDetails.descriptionHtml)
+      : ''
   const description = toPlainText(
-    extraInfo?.about?.shortDescription ||
+    metadata?.description ||
+      extraInfo?.about?.shortDescription ||
       extraInfo?.about?.description ||
       steamDetails?.shortDescription ||
       gameInfo.description
   )
   const genres = (
+    (metadata?.genres.length ? metadata.genres : undefined) ||
     steamDetails?.genres ||
     extraInfo?.genres ||
     gameInfo.extra?.genres ||
@@ -301,19 +327,33 @@ function CollectionFocusPanel({
     []
   ).filter(Boolean)
   const releaseDate =
+    metadata?.releaseDate ||
     steamDetails?.releaseDate ||
     extraInfo?.releaseDate ||
     wikiInfo?.pcgamingwiki?.releaseDate?.[0]?.replace(/^[^:]+:\s*/, '')
-  const developer = steamDetails?.developers.join(', ') || gameInfo.developer
-  const publisher = steamDetails?.publishers.join(', ')
-  const developers = steamDetails?.developers?.length
-    ? steamDetails.developers
-    : splitNames(developer)
-  const publishers = steamDetails?.publishers?.length
-    ? steamDetails.publishers
-    : splitNames(publisher)
-  const features = steamDetails?.features ?? []
-  const platform = gameInfo.install?.platform || 'PC'
+  const developer =
+    metadata?.developers.join(', ') ||
+    steamDetails?.developers.join(', ') ||
+    gameInfo.developer
+  const publisher =
+    metadata?.publishers.join(', ') || steamDetails?.publishers.join(', ')
+  const developers = metadata?.developers?.length
+    ? metadata.developers
+    : steamDetails?.developers?.length
+      ? steamDetails.developers
+      : splitNames(developer)
+  const publishers = metadata?.publishers?.length
+    ? metadata.publishers
+    : steamDetails?.publishers?.length
+      ? steamDetails.publishers
+      : splitNames(publisher)
+  const features = metadata?.features.length
+    ? metadata.features
+    : (steamDetails?.features ?? [])
+  const platforms = metadata?.platforms.length
+    ? metadata.platforms
+    : [gameInfo.install?.platform || 'PC']
+  const platform = platforms[0] || 'PC'
   const sourceLabel = libraryLabel(
     meta,
     runner,
@@ -552,6 +592,20 @@ function CollectionFocusPanel({
                       <FactChips items={publishers} />
                     </div>
                   )}
+                  {metadata?.series && (
+                    <div>
+                      <dt>{t('collection.metadata.field.series', 'Series')}</dt>
+                      <dd>{metadata.series}</dd>
+                    </div>
+                  )}
+                  {typeof metadata?.criticScore === 'number' && (
+                    <div>
+                      <dt>
+                        {t('collection.metadata.field.criticScore', 'Score')}
+                      </dt>
+                      <dd>{metadata.criticScore}</dd>
+                    </div>
+                  )}
                   <div>
                     <dt>{t('collection.focus.library', 'Library')}</dt>
                     <dd>{sourceLabel}</dd>
@@ -585,6 +639,20 @@ function CollectionFocusPanel({
                     <div className="is-split">
                       <dt>{t('collection.focus.features', 'Features')}</dt>
                       <FactChips items={features.slice(0, 8)} />
+                    </div>
+                  )}
+                  {metadata && metadata.themes.length > 0 && (
+                    <div className="is-split">
+                      <dt>{t('collection.metadata.field.themes', 'Themes')}</dt>
+                      <FactChips items={metadata.themes.slice(0, 8)} />
+                    </div>
+                  )}
+                  {platforms.length > 1 && (
+                    <div className="is-split">
+                      <dt>
+                        {t('collection.metadata.field.platforms', 'Platforms')}
+                      </dt>
+                      <FactChips items={platforms.slice(0, 8)} />
                     </div>
                   )}
                   {genres.length > 0 && (
@@ -636,6 +704,15 @@ function CollectionFocusPanel({
         <button
           type="button"
           className="collectionFocus__iconBtn"
+          title={t('collection.metadata.title', 'Collection metadata')}
+          aria-label={t('collection.metadata.title', 'Collection metadata')}
+          onClick={() => setMetadataOpen(true)}
+        >
+          <TravelExplore />
+        </button>
+        <button
+          type="button"
+          className="collectionFocus__iconBtn"
           title={t('collection.gameArt.title', 'Game images')}
           aria-label={t('collection.gameArt.title', 'Game images')}
           onClick={() => setArtOpen(true)}
@@ -661,6 +738,16 @@ function CollectionFocusPanel({
           defaultHero={defaultHero}
           onChange={onArtChange}
           onClose={() => setArtOpen(false)}
+        />
+      )}
+      {metadataOpen && (
+        <CollectionMetadataDialog
+          game={gameInfo}
+          title={title}
+          steamAppId={storeAppId}
+          metadata={metadata}
+          onChange={onMetadataChange}
+          onClose={() => setMetadataOpen(false)}
         />
       )}
     </aside>

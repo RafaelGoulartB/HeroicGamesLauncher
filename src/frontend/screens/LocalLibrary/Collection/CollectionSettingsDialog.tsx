@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   CollectionBackupInterval,
+  CollectionMetadataSettings,
   CollectionSettings,
+  CoverAspectPreset,
   LudusaviBackupFormat,
-  LudusaviCompression
+  LudusaviCompression,
+  MetadataField,
+  MetadataSourceId
+} from 'common/types/local-library'
+import {
+  DEFAULT_FIELD_PRIORITY,
+  METADATA_FIELDS
 } from 'common/types/local-library'
 import {
   PathSelectionBox,
   SelectField,
+  TextInputField,
   ToggleSwitch
 } from 'frontend/components/UI'
 import {
@@ -23,6 +32,7 @@ import './CollectionSettingsDialog.css'
 type Props = {
   onClose: () => void
   onSettingsChange?: (settings: CollectionSettings) => void
+  onOpenMetadataWizard?: () => void
 }
 
 function formatBackupTime(value?: string) {
@@ -35,9 +45,26 @@ function formatBackupTime(value?: string) {
   }).format(date)
 }
 
+const FIELD_LABELS: Record<MetadataField, string> = {
+  description: 'Description',
+  releaseDate: 'Release date',
+  developers: 'Developers',
+  publishers: 'Publishers',
+  genres: 'Genres',
+  themes: 'Themes',
+  gameModes: 'Game modes',
+  platforms: 'Platforms',
+  series: 'Series',
+  features: 'Features',
+  criticScore: 'Score',
+  cover: 'Cover',
+  hero: 'Background'
+}
+
 export default function CollectionSettingsDialog({
   onClose,
-  onSettingsChange
+  onSettingsChange,
+  onOpenMetadataWizard
 }: Props) {
   const { t } = useTranslation()
   const [settings, setSettings] = useState<CollectionSettings | null>(null)
@@ -56,6 +83,13 @@ export default function CollectionSettingsDialog({
   const [running, setRunning] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [igdbClientId, setIgdbClientId] = useState('')
+  const [igdbClientSecret, setIgdbClientSecret] = useState('')
+  const [coverAspect, setCoverAspect] = useState<CoverAspectPreset>('steam')
+  const [downloadImages, setDownloadImages] = useState(false)
+  const [autoFillMissing, setAutoFillMissing] = useState(true)
+  const [fieldPriority, setFieldPriority] = useState(DEFAULT_FIELD_PRIORITY)
+  const [igdbTest, setIgdbTest] = useState('')
 
   async function reload() {
     const next = await window.api.localLibrary.getSettings()
@@ -69,6 +103,12 @@ export default function CollectionSettingsDialog({
     setLudusaviFormat(next.ludusavi.format)
     setLudusaviCompression(next.ludusavi.compression)
     setGreyUninstalledGames(next.greyUninstalledGames !== false)
+    setIgdbClientId(next.metadata.igdbClientId)
+    setIgdbClientSecret(next.metadata.igdbClientSecret)
+    setCoverAspect(next.metadata.coverAspect)
+    setDownloadImages(next.metadata.downloadImages)
+    setAutoFillMissing(next.metadata.autoFillMissing !== false)
+    setFieldPriority(next.metadata.fieldPriority)
   }
 
   useEffect(() => {
@@ -85,6 +125,78 @@ export default function CollectionSettingsDialog({
       setSettings(next)
       setGreyUninstalledGames(next.greyUninstalledGames)
       onSettingsChange?.(next)
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function persistMetadata(patch: Partial<CollectionMetadataSettings>) {
+    setSaving(true)
+    setError('')
+    setIgdbTest('')
+    try {
+      const next = await window.api.localLibrary.setMetadataSettings(patch)
+      setSettings(next)
+      setIgdbClientId(next.metadata.igdbClientId)
+      setIgdbClientSecret(next.metadata.igdbClientSecret)
+      setCoverAspect(next.metadata.coverAspect)
+      setDownloadImages(next.metadata.downloadImages)
+      setAutoFillMissing(next.metadata.autoFillMissing)
+      setFieldPriority(next.metadata.fieldPriority)
+      onSettingsChange?.(next)
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function preferredSource(field: MetadataField): string {
+    const current = fieldPriority[field] ?? DEFAULT_FIELD_PRIORITY[field]
+    const fallback = DEFAULT_FIELD_PRIORITY[field]
+    if (current.join(',') === fallback.join(',')) return 'auto'
+    return current[0] || 'auto'
+  }
+
+  function handlePreferredSource(field: MetadataField, value: string) {
+    const next = {
+      ...fieldPriority,
+      [field]:
+        value === 'auto'
+          ? DEFAULT_FIELD_PRIORITY[field]
+          : [
+              value as MetadataSourceId,
+              ...DEFAULT_FIELD_PRIORITY[field].filter((item) => item !== value)
+            ]
+    }
+    setFieldPriority(next)
+    void persistMetadata({ fieldPriority: next })
+  }
+
+  async function handleTestIgdb() {
+    setSaving(true)
+    setError('')
+    setIgdbTest('')
+    try {
+      if (
+        igdbClientId !== settings?.metadata.igdbClientId ||
+        igdbClientSecret !== settings?.metadata.igdbClientSecret
+      ) {
+        await persistMetadata({
+          igdbClientId,
+          igdbClientSecret
+        })
+      }
+      const result = await window.api.localLibrary.testIgdbCredentials()
+      if (result.ok) {
+        setIgdbTest(t('collection.metadata.igdbOk', 'IGDB credentials work.'))
+        return
+      }
+      setError(
+        result.error || t('collection.metadata.igdbFail', 'IGDB test failed.')
+      )
     } catch (err) {
       setError(String(err))
     } finally {
@@ -207,6 +319,137 @@ export default function CollectionSettingsDialog({
               'Uninstalled covers appear grey. Turn this off to keep their original colour.'
             )}
           </p>
+        </section>
+
+        <section className="CollectionSettingsDialog__section">
+          <h4>{t('collection.metadata.settings', 'Metadata')}</h4>
+          <p>
+            {t(
+              'collection.metadata.settingsHelp',
+              'Collection uses IGDB first, then Steam, store pages, Lutris, and Playnite files. Create a Twitch app to get IGDB keys: https://dev.twitch.tv/console'
+            )}
+          </p>
+          <TextInputField
+            htmlId="collection-igdb-id"
+            label={t('collection.metadata.clientId', 'Twitch / IGDB Client ID')}
+            value={igdbClientId}
+            onChange={setIgdbClientId}
+            onBlur={() => void persistMetadata({ igdbClientId })}
+          />
+          <TextInputField
+            htmlId="collection-igdb-secret"
+            type="password"
+            label={t(
+              'collection.metadata.clientSecret',
+              'Twitch / IGDB Client Secret'
+            )}
+            value={igdbClientSecret}
+            onChange={setIgdbClientSecret}
+            onBlur={() => void persistMetadata({ igdbClientSecret })}
+          />
+          <div className="CollectionSettingsDialog__actions">
+            <button
+              type="button"
+              className="button outline"
+              disabled={saving}
+              onClick={() => void handleTestIgdb()}
+            >
+              {t('collection.metadata.testIgdb', 'Test IGDB')}
+            </button>
+            <button
+              type="button"
+              className="button is-primary"
+              disabled={saving}
+              onClick={() => onOpenMetadataWizard?.()}
+            >
+              {t('collection.metadata.wizard.open', 'Download metadata…')}
+            </button>
+          </div>
+          {igdbTest && (
+            <p className="CollectionSettingsDialog__ok">{igdbTest}</p>
+          )}
+          <SelectField
+            htmlId="collection-cover-aspect"
+            label={t('collection.metadata.coverAspect', 'Cover aspect')}
+            value={coverAspect}
+            disabled={saving}
+            onChange={(event) => {
+              const next = event.target.value as CoverAspectPreset
+              setCoverAspect(next)
+              void persistMetadata({ coverAspect: next })
+            }}
+          >
+            <MenuItem value="steam">Steam (2:3)</MenuItem>
+            <MenuItem value="igdb">IGDB (3:4)</MenuItem>
+            <MenuItem value="gog">GOG</MenuItem>
+            <MenuItem value="square">
+              {t('collection.metadata.square', 'Square')}
+            </MenuItem>
+            <MenuItem value="dvd">DVD (5:7)</MenuItem>
+            <MenuItem value="banner">Banner (16:9)</MenuItem>
+          </SelectField>
+          <ToggleSwitch
+            htmlId="collection-metadata-autofill"
+            value={autoFillMissing}
+            disabled={saving}
+            handleChange={() => {
+              const next = !autoFillMissing
+              setAutoFillMissing(next)
+              void persistMetadata({ autoFillMissing: next })
+            }}
+            title={t(
+              'collection.metadata.autoFill',
+              'Fill missing metadata in the background'
+            )}
+          />
+          <ToggleSwitch
+            htmlId="collection-metadata-download"
+            value={downloadImages}
+            disabled={saving}
+            handleChange={() => {
+              const next = !downloadImages
+              setDownloadImages(next)
+              void persistMetadata({ downloadImages: next })
+            }}
+            title={t(
+              'collection.metadata.downloadImages',
+              'Copy covers to disk (default keeps CDN URLs)'
+            )}
+          />
+          <p className="CollectionSettingsDialog__meta">
+            {t(
+              'collection.metadata.priorityHelp',
+              'Preferred source per field. Other sources still fill empty values.'
+            )}
+          </p>
+          <div className="CollectionSettingsDialog__priority">
+            {METADATA_FIELDS.map((field) => (
+              <SelectField
+                key={field}
+                htmlId={`collection-priority-${field}`}
+                label={t(
+                  `collection.metadata.field.${field}`,
+                  FIELD_LABELS[field]
+                )}
+                value={preferredSource(field)}
+                disabled={saving}
+                onChange={(event) =>
+                  handlePreferredSource(field, event.target.value)
+                }
+              >
+                <MenuItem value="auto">
+                  {t('collection.metadata.auto', 'Auto (IGDB first)')}
+                </MenuItem>
+                <MenuItem value="igdb">IGDB</MenuItem>
+                <MenuItem value="steam">Steam</MenuItem>
+                <MenuItem value="store">
+                  {t('collection.metadata.store', 'Store')}
+                </MenuItem>
+                <MenuItem value="lutris">Lutris</MenuItem>
+                <MenuItem value="playnite">Playnite</MenuItem>
+              </SelectField>
+            ))}
+          </div>
         </section>
 
         <section className="CollectionSettingsDialog__section">

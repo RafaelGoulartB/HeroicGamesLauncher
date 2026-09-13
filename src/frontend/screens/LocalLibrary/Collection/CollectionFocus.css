@@ -135,6 +135,26 @@
   justify-self: end;
 }
 
+.collection[data-cover-aspect='igdb'] .collectionFocus__cover {
+  aspect-ratio: 3 / 4;
+}
+
+.collection[data-cover-aspect='gog'] .collectionFocus__cover {
+  aspect-ratio: 11 / 15;
+}
+
+.collection[data-cover-aspect='square'] .collectionFocus__cover {
+  aspect-ratio: 1 / 1;
+}
+
+.collection[data-cover-aspect='dvd'] .collectionFocus__cover {
+  aspect-ratio: 5 / 7;
+}
+
+.collection[data-cover-aspect='banner'] .collectionFocus__cover {
+  aspect-ratio: 16 / 9;
+}
+
 .collectionFocus__body {
   flex: 1;
   min-height: 0;

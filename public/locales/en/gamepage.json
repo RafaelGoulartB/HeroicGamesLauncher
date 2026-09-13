@@ -123,6 +123,15 @@
             "restart": "Restart Heroic Local to load Ludusavi backup.",
             "running": "Backing up saves with Ludusavi…"
         },
+        "metadata": {
+            "field": {
+                "criticScore": "Score",
+                "platforms": "Platforms",
+                "series": "Series",
+                "themes": "Themes"
+            },
+            "title": "Collection metadata"
+        },
         "notPlayed": "Not Played",
         "sort": {
             "playtime": "Playtime"
