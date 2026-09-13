@@ -34,6 +34,8 @@ import './index.css'
 const INSTALL_FILTER_KEY = 'collection_install_filter'
 const SORT_KEY = 'collection_sort'
 const SIDEBAR_HIDDEN_KEY = 'collection_sidebar_hidden'
+const COLLAPSED_GROUPS_KEY = 'collection_collapsed_groups'
+const UNKNOWN_GROUP_ID = 'ungrouped'
 const storage: Storage = window.localStorage
 const SIDEBAR_HIDDEN_CLASS = 'collectionSidebarHidden'
 
@@ -69,6 +71,20 @@ function readSidebarHidden(): boolean {
   return storage.getItem(SIDEBAR_HIDDEN_KEY) === '1'
 }
 
+function readCollapsedGroups(): Set<string> {
+  try {
+    const stored = storage.getItem(COLLAPSED_GROUPS_KEY)
+    if (!stored) return new Set()
+    const parsed: unknown = JSON.parse(stored)
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(
+      parsed.filter((item): item is string => typeof item === 'string')
+    )
+  } catch {
+    return new Set()
+  }
+}
+
 function applySidebarHidden(hidden: boolean) {
   document.getElementById('app')?.classList.toggle(SIDEBAR_HIDDEN_CLASS, hidden)
 }
@@ -96,6 +112,8 @@ export default function Collection() {
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
   const [groupByStatus, setGroupByStatus] = useState(true)
+  const [collapsedGroups, setCollapsedGroups] =
+    useState<Set<string>>(readCollapsedGroups)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [greyUninstalledGames, setGreyUninstalledGames] = useState(true)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
@@ -121,6 +139,16 @@ export default function Collection() {
   function handleSort(next: CollectionSort) {
     storage.setItem(SORT_KEY, next)
     setSort(next)
+  }
+
+  function toggleGroup(id: string) {
+    setCollapsedGroups((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      storage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify([...next]))
+      return next
+    })
   }
 
   async function reload() {
@@ -304,8 +332,25 @@ export default function Collection() {
       ?.querySelectorAll('[data-invisible]')
       .forEach((card) => observer.observe(card))
 
-    return () => observer.disconnect()
-  }, [filtered, groupByStatus, statuses, metas, sort, focusedKey])
+    const frame = window.requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelectorAll('[data-invisible]')
+        .forEach((card) => observer.observe(card))
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [
+    filtered,
+    groupByStatus,
+    statuses,
+    metas,
+    sort,
+    focusedKey,
+    collapsedGroups
+  ])
 
   useEffect(() => {
     if (!focusedKey) return
@@ -435,8 +480,18 @@ export default function Collection() {
               const list = grouped.buckets.get(status.id) ?? []
               if (!list.length) return null
               return (
-                <section key={status.id} className="collection__group">
-                  <h5>
+                <section
+                  key={status.id}
+                  className={classNames('collection__group', {
+                    'is-collapsed': collapsedGroups.has(status.id)
+                  })}
+                >
+                  <button
+                    type="button"
+                    className="collection__groupToggle"
+                    aria-expanded={!collapsedGroups.has(status.id)}
+                    onClick={() => toggleGroup(status.id)}
+                  >
                     <span
                       className="collection__dot"
                       style={{
@@ -445,7 +500,7 @@ export default function Collection() {
                     />
                     {status.name}
                     <span className="collection__count">{list.length}</span>
-                  </h5>
+                  </button>
                   <div className="collection__grid">{renderCards(list)}</div>
                 </section>
               )
@@ -454,13 +509,22 @@ export default function Collection() {
             <div className="collection__grid">{renderCards(filtered)}</div>
           )}
           {groupByStatus && grouped.unknown.length > 0 && (
-            <section className="collection__group">
-              <h5>
+            <section
+              className={classNames('collection__group', {
+                'is-collapsed': collapsedGroups.has(UNKNOWN_GROUP_ID)
+              })}
+            >
+              <button
+                type="button"
+                className="collection__groupToggle"
+                aria-expanded={!collapsedGroups.has(UNKNOWN_GROUP_ID)}
+                onClick={() => toggleGroup(UNKNOWN_GROUP_ID)}
+              >
                 {t('collection.ungrouped', 'Other')}
                 <span className="collection__count">
                   {grouped.unknown.length}
                 </span>
-              </h5>
+              </button>
               <div className="collection__grid">
                 {renderCards(grouped.unknown)}
               </div>

@@ -215,20 +215,37 @@
   -webkit-app-region: no-drag;
 }
 
-.collection__group h5 {
+.collection__groupToggle {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+  width: 100%;
   margin: 0;
+  padding: 0.4rem 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.collection__group h5,
+.collection__groupToggle {
   font-size: var(--text-md);
 }
 
-.collection--focused .collection__group h5 {
+.collection--focused .collection__group h5,
+.collection--focused .collection__groupToggle {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: rgba(255, 255, 255, 0.78);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.collection__groupToggle:hover {
+  color: #fff;
 }
 
 .collection__count {
@@ -399,7 +416,15 @@
 }
 
 .collection--focused .collection__group {
-  margin-bottom: 1.15rem;
+  margin-bottom: 0.85rem;
+}
+
+.collection--focused .collection__group.is-collapsed {
+  margin-bottom: 0.7rem;
+}
+
+.collection__group.is-collapsed .collection__grid {
+  display: none;
 }
 
 .collection__dot {
