@@ -8,11 +8,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import classNames from 'classnames'
-import {
-  faBorderAll,
-  faHardDrive as hardDriveSolid
-} from '@fortawesome/free-solid-svg-icons'
-import { faHardDrive as hardDriveLight } from '@fortawesome/free-regular-svg-icons'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu, MenuOpen, Settings } from '@mui/icons-material'
 import type { GameInfo } from 'common/types'
@@ -22,21 +18,18 @@ import type {
   LocalGameMeta
 } from 'common/types/local-library'
 import ContextProvider from 'frontend/state/ContextProvider'
-import SearchBar from 'frontend/components/UI/SearchBar'
-import FormControl from 'frontend/components/UI/FormControl'
 import { CachedImage } from 'frontend/components/UI'
 import { configStore, timestampStore } from 'frontend/helpers/electronStores'
 import CollectionCard from './CollectionCard'
 import CollectionFocus from './CollectionFocus'
 import CollectionSettingsDialog from './CollectionSettingsDialog'
+import InstallFilterMenu, { type InstallFilter } from './InstallFilterMenu'
 import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
 import { collectionArtKey, collectionStageArt } from './steamArt'
 import './index.css'
-
-type InstallFilter = 'all' | 'installed' | 'uninstalled'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
 const SORT_KEY = 'collection_sort'
@@ -370,10 +363,10 @@ export default function Collection() {
         </div>
       )}
       <header className="collection__header">
-        <div className="collection__heading">
+        <div className="collection__toolbarLeft">
           <button
             type="button"
-            className="collection__iconBtn"
+            className="collection__toolBtn"
             title={
               sidebarHidden
                 ? t('collection.showSidebar', 'Show sidebar')
@@ -389,70 +382,39 @@ export default function Collection() {
           >
             {sidebarHidden ? <Menu /> : <MenuOpen />}
           </button>
-          <h5 className="collection__title">
-            {t('collection.title', 'Collection')}
-            <span className="collection__count">{filtered.length}</span>
-          </h5>
         </div>
-        <div className="collection__controls">
-          <div className="collection__search">
-            <SearchBar
-              onInputChanged={handleSearch}
-              value={search}
-              placeholder={t('search', 'Search for Games')}
-            />
-          </div>
-          <FormControl segmented small>
-            <button
-              className={classNames('FormControl__button', {
-                active: installFilter === 'all'
-              })}
-              title={t('collection.filter.all', 'All games')}
-              onClick={() => handleInstallFilter('all')}
-            >
-              <FontAwesomeIcon
-                className="FormControl__segmentedFaIcon"
-                icon={faBorderAll}
-              />
-            </button>
-            <button
-              className={classNames('FormControl__button', {
-                active: installFilter === 'installed'
-              })}
-              title={t('collection.filter.installed', 'Installed')}
-              onClick={() => handleInstallFilter('installed')}
-            >
-              <FontAwesomeIcon
-                className="FormControl__segmentedFaIcon"
-                icon={hardDriveSolid}
-              />
-            </button>
-            <button
-              className={classNames('FormControl__button', {
-                active: installFilter === 'uninstalled'
-              })}
-              title={t(
-                'collection.filter.uninstalled',
-                'Not installed / Uninstalled'
-              )}
-              onClick={() => handleInstallFilter('uninstalled')}
-            >
-              <FontAwesomeIcon
-                className="FormControl__segmentedFaIcon"
-                icon={hardDriveLight}
-              />
-            </button>
-          </FormControl>
+        <div className="collection__toolbarCenter">
+          <InstallFilterMenu
+            value={installFilter}
+            onChange={handleInstallFilter}
+          />
           <SortMenu value={sort} onChange={handleSort} />
-          <PlayniteMenu onLibraryChanged={() => void reload()} />
           <StatusMenu
             groupByStatus={groupByStatus}
             onGroupByStatusChange={setGroupByStatus}
             onStatusesChanged={() => void reload()}
           />
+          <label className="collection__search">
+            <FontAwesomeIcon
+              className="collection__searchIcon"
+              icon={faSearch}
+            />
+            <input
+              id="search"
+              className="collection__searchInput"
+              data-testid="searchInput"
+              aria-label={t('search', 'Search for Games')}
+              placeholder={t('search', 'Search for Games')}
+              value={search}
+              onChange={(event) => handleSearch(event.target.value)}
+            />
+          </label>
+        </div>
+        <div className="collection__toolbarRight">
+          <PlayniteMenu onLibraryChanged={() => void reload()} />
           <button
             type="button"
-            className="collection__iconBtn"
+            className="collection__toolBtn"
             title={t('collection.settings.title', 'Collection settings')}
             aria-label={t('collection.settings.title', 'Collection settings')}
             onClick={() => setSettingsOpen(true)}

@@ -1,9 +1,6 @@
 .collectionSortMenu {
   flex: 0 0 auto;
-}
-
-.collectionSortMenu .dropdownButton.selectStyle {
-  min-width: 160px;
+  width: auto;
 }
 
 .collectionSortMenu .dropdown {

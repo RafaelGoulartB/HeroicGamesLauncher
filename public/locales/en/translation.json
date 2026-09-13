@@ -223,6 +223,7 @@
         "filter": {
             "all": "All games",
             "installed": "Installed",
+            "menu": "Install filter",
             "uninstalled": "Not installed / Uninstalled"
         },
         "gameArt": {
@@ -314,7 +315,6 @@
             "moveUp": "Move up",
             "remove": "Remove"
         },
-        "title": "Collection",
         "ungrouped": "Other"
     },
     "console": {

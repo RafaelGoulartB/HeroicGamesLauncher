@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Dropdown from 'frontend/components/UI/Dropdown'
+import { SyncAlt } from '@mui/icons-material'
+import CollectionDropdown from './CollectionDropdown'
 import ContextProvider from 'frontend/state/ContextProvider'
 import ImportPlayniteDialog from 'frontend/screens/LocalLibrary/ImportPlayniteDialog'
 import MergePlayniteDialog from './MergePlayniteDialog'
@@ -65,10 +66,17 @@ export default function PlayniteMenu({ onLibraryChanged }: Props) {
 
   return (
     <>
-      <Dropdown
-        title={t('collection.playnite.menu', 'Playnite')}
+      <CollectionDropdown
+        title={
+          <span
+            className="collection__toolLabel"
+            title={t('collection.playnite.menu', 'Playnite')}
+          >
+            <SyncAlt />
+          </span>
+        }
         className="collectionPlayniteMenu"
-        buttonClass="selectStyle"
+        buttonClass="collection__toolBtn"
         popUpOnHover
       >
         <button
@@ -103,7 +111,7 @@ export default function PlayniteMenu({ onLibraryChanged }: Props) {
             ? t('collection.playnite.exporting', 'Exporting…')
             : t('collection.playnite.export', 'Export for Playnite…')}
         </button>
-      </Dropdown>
+      </CollectionDropdown>
       {importOpen && (
         <ImportPlayniteDialog
           onClose={() => {
