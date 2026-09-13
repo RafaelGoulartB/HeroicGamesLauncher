@@ -195,6 +195,21 @@ export interface SteamHeroCacheResult {
   fromCache: boolean
 }
 
+export interface CollectionSteamDetails {
+  steamAppId: string
+  language: string
+  name: string
+  shortDescription: string
+  descriptionHtml: string
+  developers: string[]
+  publishers: string[]
+  genres: string[]
+  features: string[]
+  releaseDate?: string
+  website?: string
+  storeUrl: string
+}
+
 export type CollectionArtKind = 'cover' | 'hero'
 
 export interface CollectionGameArt {

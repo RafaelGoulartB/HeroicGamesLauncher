@@ -16,6 +16,7 @@ import {
   setCollectionGameArt
 } from './art'
 import { cacheSteamHero, warmSteamHeroes } from './heroes'
+import { getSteamAppDetails } from './steam-details'
 import { initLocalArtProtocol } from './protocol'
 import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
 import {
@@ -77,6 +78,7 @@ export function registerLocalLibraryIpc() {
     openSteamClientUri(args.action, args.steamAppId)
   )
   addHandler('cacheSteamHero', (_e, steamAppId) => cacheSteamHero(steamAppId))
+  addHandler('getSteamAppDetails', (_e, args) => getSteamAppDetails(args))
   addHandler('getAllCollectionArt', () => getAllCollectionArt())
   addHandler('setCollectionGameArt', (_e, args) => setCollectionGameArt(args))
   addHandler('clearCollectionGameArt', (_e, args) =>

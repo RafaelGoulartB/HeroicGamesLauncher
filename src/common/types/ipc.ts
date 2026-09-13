@@ -67,6 +67,7 @@ import type {
   SteamClientUriAction,
   SteamClientUriResult,
   SteamHeroCacheResult,
+  CollectionSteamDetails,
   CollectionArtKind,
   CollectionGameArt,
   CollectionBackupInterval,
@@ -273,6 +274,10 @@ interface AsyncIPCFunctions {
     steamAppId: string
   }) => Promise<SteamClientUriResult>
   cacheSteamHero: (steamAppId: string) => Promise<SteamHeroCacheResult | null>
+  getSteamAppDetails: (args: {
+    steamAppId: string
+    language?: string
+  }) => Promise<CollectionSteamDetails | null>
   getAllCollectionArt: () => Promise<Record<string, CollectionGameArt>>
   setCollectionGameArt: (args: {
     appName: string

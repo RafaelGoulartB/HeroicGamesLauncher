@@ -17,6 +17,7 @@ export const localLibrary = {
   reorderStatuses: makeHandlerInvoker('reorderCompletionStatuses'),
   openSteamUri: makeHandlerInvoker('openSteamClientUri'),
   cacheSteamHero: makeHandlerInvoker('cacheSteamHero'),
+  getSteamDetails: makeHandlerInvoker('getSteamAppDetails'),
   getAllCollectionArt: makeHandlerInvoker('getAllCollectionArt'),
   setGameArt: makeHandlerInvoker('setCollectionGameArt'),
   clearGameArt: makeHandlerInvoker('clearCollectionGameArt'),
