@@ -54,6 +54,30 @@ import type { GOGCloudSavesLocation, UserData } from './gog'
 import type { NileLoginData, NileRegisterData, NileUserData } from './nile'
 import type { GameOverride, SelectiveDownload } from './legendary'
 import type { GetLogFileArgs } from 'backend/logger/paths'
+import type {
+  LocalGameMeta,
+  LocalGameSession,
+  PlayniteImportArgs,
+  PlayniteImportPreview,
+  PlayniteImportResult,
+  PlayniteMergePreview,
+  PlayniteExportResult,
+  PlaynitePreviewArgs,
+  CompletionStatus,
+  SteamClientUriAction,
+  SteamClientUriResult,
+  SteamHeroCacheResult,
+  CollectionSteamDetails,
+  CollectionArtKind,
+  CollectionGameArt,
+  CollectionWebImage,
+  CollectionWebImageSearchArgs,
+  CollectionBackupInterval,
+  CollectionBackupResult,
+  CollectionSettings,
+  LudusaviBackupResult,
+  LudusaviSettings
+} from './local-library'
 
 // ts-prune-ignore-next
 interface SyncIPCFunctions {
@@ -221,6 +245,92 @@ interface AsyncIPCFunctions {
   requestGameSettings: (appName: string) => Promise<GameSettings>
   writeConfig: (args: { appName: string; config: Partial<AppSettings> }) => void
   refreshLibrary: (library?: Runner | 'all') => Promise<void>
+  previewPlayniteImport: (
+    args: PlaynitePreviewArgs
+  ) => Promise<PlayniteImportPreview>
+  importPlayniteLibrary: (
+    args: PlayniteImportArgs
+  ) => Promise<PlayniteImportResult>
+  mergePlayniteLibrary: () => Promise<PlayniteImportResult>
+  previewPlayniteMerge: () => Promise<PlayniteMergePreview>
+  exportPlayniteLibrary: (targetPath: string) => Promise<PlayniteExportResult>
+  getLastPlayniteLibraryPath: () => Promise<string | undefined>
+  getLocalGameSessions: (appName: string) => Promise<LocalGameSession[]>
+  getLocalGameMeta: (appName: string) => Promise<LocalGameMeta | undefined>
+  getAllLocalGameMeta: () => Promise<Record<string, LocalGameMeta>>
+  getCompletionStatuses: () => Promise<CompletionStatus[]>
+  setGameCompletionStatus: (args: {
+    appName: string
+    statusId: string
+    runner?: LocalGameMeta['runner']
+    title?: string
+    playniteId?: string
+  }) => Promise<LocalGameMeta | undefined>
+  upsertCompletionStatus: (
+    status: CompletionStatus
+  ) => Promise<CompletionStatus[]>
+  deleteCompletionStatus: (id: string) => Promise<CompletionStatus[]>
+  reorderCompletionStatuses: (ids: string[]) => Promise<CompletionStatus[]>
+  openSteamClientUri: (args: {
+    action: SteamClientUriAction
+    steamAppId: string
+  }) => Promise<SteamClientUriResult>
+  cacheSteamHero: (steamAppId: string) => Promise<SteamHeroCacheResult | null>
+  getSteamAppDetails: (args: {
+    steamAppId: string
+    language?: string
+  }) => Promise<CollectionSteamDetails | null>
+  getAllCollectionArt: () => Promise<Record<string, CollectionGameArt>>
+  setCollectionGameArt: (args: {
+    appName: string
+    runner: Runner
+    kind: CollectionArtKind
+    sourcePath: string
+  }) => Promise<CollectionGameArt>
+  searchCollectionWebImages: (
+    args: CollectionWebImageSearchArgs
+  ) => Promise<CollectionWebImage[]>
+  setCollectionGameArtFromUrl: (args: {
+    appName: string
+    runner: Runner
+    kind: CollectionArtKind
+    imageUrl: string
+    thumbUrl?: string
+  }) => Promise<CollectionGameArt>
+  clearCollectionGameArt: (args: {
+    appName: string
+    runner: Runner
+    kind: CollectionArtKind
+  }) => Promise<CollectionGameArt>
+  getCollectionSettings: () => Promise<CollectionSettings>
+  setCollectionUiSettings: (args: {
+    greyUninstalledGames: boolean
+  }) => Promise<CollectionSettings>
+  setCollectionBackupSettings: (args: {
+    folder: string
+    interval: CollectionBackupInterval
+  }) => Promise<CollectionSettings>
+  runCollectionBackup: (force?: boolean) => Promise<CollectionBackupResult>
+  setLudusaviSettings: (
+    args: Partial<
+      Pick<
+        LudusaviSettings,
+        | 'enabled'
+        | 'useInstalledConfig'
+        | 'binaryPath'
+        | 'backupPath'
+        | 'format'
+        | 'compression'
+      >
+    >
+  ) => Promise<CollectionSettings>
+  runLudusaviBackup: (args: {
+    appName: string
+    title: string
+    runner: Runner
+    steamAppId?: string
+    storeGameId?: string
+  }) => Promise<LudusaviBackupResult>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

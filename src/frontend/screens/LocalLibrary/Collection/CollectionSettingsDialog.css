@@ -1,0 +1,38 @@
+.CollectionSettingsDialog {
+  min-width: min(560px, 92vw);
+}
+
+.CollectionSettingsDialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.CollectionSettingsDialog__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.CollectionSettingsDialog__section h4 {
+  margin: 0;
+}
+
+.CollectionSettingsDialog__section p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.CollectionSettingsDialog__meta {
+  font-size: var(--text-sm);
+}
+
+.CollectionSettingsDialog__ok {
+  color: var(--success, var(--text-default)) !important;
+}
+
+.CollectionSettingsDialog__error {
+  color: var(--danger, #e74c3c) !important;
+}

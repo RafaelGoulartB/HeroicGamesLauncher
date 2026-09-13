@@ -52,6 +52,7 @@
         "choose-gogdl-binary": "Select GOGDL Binary (needs restart)",
         "choose-legendary-binary": "Select Legendary binary",
         "choose-nile-binary": "Select Nile binary",
+        "close": "Close",
         "customWine": "Select the Wine or Proton binary",
         "default-install-path": "Choose Default Install Path",
         "default-steam-path": "Steam path.",
@@ -151,6 +152,7 @@
         "select": {
             "button": "Select",
             "exe": "Select EXE",
+            "image": "Select Image",
             "script": "Select script ..."
         },
         "shortcuts": {
@@ -160,6 +162,7 @@
             "message-remove-mac": "Shortcuts were removed from the Applications folder",
             "title": "Shortcuts"
         },
+        "show-in-folder": "Show in folder",
         "sync": {
             "error": "Invalid Path",
             "title": "Choose the saves directory"
@@ -224,6 +227,122 @@
         "new-category": "New Category",
         "remove-category": "Remove Category",
         "warning": "Warning"
+    },
+    "collection": {
+        "addStatus": "Add",
+        "filter": {
+            "all": "All games",
+            "installed": "Installed",
+            "menu": "Install filter",
+            "uninstalled": "Not installed / Uninstalled"
+        },
+        "gameArt": {
+            "change": "Change",
+            "cover": "Cover",
+            "custom": "Custom image",
+            "default": "Default",
+            "empty": "No image",
+            "help": "These images are used in Collection. Steam art stays cached; a custom file replaces it until you reset.",
+            "hero": "Background",
+            "reset": "Reset",
+            "saving": "Saving…",
+            "searchWeb": "Search web",
+            "title": "Game images",
+            "webSearch": {
+                "downloadFailed": "Could not download the selected image.",
+                "empty": "No images found. Try another search.",
+                "failed": "Could not search images. Try another term.",
+                "help": "Pick an image from the web. Collection saves it like a file you selected yourself.",
+                "loading": "Searching…",
+                "more": "Load more",
+                "saving": "Downloading…",
+                "search": "Search",
+                "select": "Select",
+                "title": "Search images",
+                "transparent": "Transparent"
+            }
+        },
+        "group": "Group by status",
+        "hideSidebar": "Hide sidebar",
+        "newStatus": "New status",
+        "playnite": {
+            "export": "Export for Playnite…",
+            "exportDone_one": "Exported {{count}} games to {{path}}. Copy this file to Windows when you want Playnite to pick up Heroic playtime and status.",
+            "exportDone_other": "Exported {{count}} games to {{path}}. Copy this file to Windows when you want Playnite to pick up Heroic playtime and status.",
+            "exportFolder": "Choose a folder for the Playnite export",
+            "exporting": "Exporting…",
+            "exportTitle": "Export for Playnite",
+            "import": "Import library…",
+            "menu": "Playnite",
+            "merge": "Merge from Playnite",
+            "mergeConfirm": "Merge",
+            "mergeDone": "Merged without overwriting your Heroic status. New games {{imported}}, updated {{updated}}, sessions {{sessions}}, skipped {{skipped}}.{{errors}}",
+            "mergeHelp": "This merges Playnite into Heroic. Status you changed here is kept. Playtime takes the higher value. New Playnite games are added.",
+            "mergeTitle": "Playnite merge",
+            "merging": "Merging…",
+            "needImport": "Import a library first to enable merge",
+            "previewConflicts": "Status conflicts (keep Heroic)",
+            "previewing": "Reading Playnite library…",
+            "previewNew": "New games",
+            "previewNone": "None",
+            "previewPlaytime": "Playtime increases",
+            "previewSessions": "New sessions",
+            "previewSkipped": "Skipped",
+            "previewStatus": "Status from Playnite",
+            "previewUnchanged": "Unchanged"
+        },
+        "settings": {
+            "appearance": "Appearance",
+            "backup": "Backup",
+            "backupDaily": "Once a day",
+            "backupDone": "Backup saved to {{path}}",
+            "backupFolder": "Backup folder",
+            "backupHelp": "Copies Heroic config (Collection, playtime, statuses, Local games, logins) into the folder below. Installed games are not included. Cache and Wine tools are skipped. A dated folder is created when Heroic Local opens, if the schedule is due.",
+            "backupInterval": "How often",
+            "backupMonthly": "Once a month",
+            "backupNever": "Never",
+            "backupNow": "Backup now",
+            "backupRunning": "Backing up…",
+            "backupSkipped": "Backup is already up to date.",
+            "backupWeekly": "Once a week",
+            "greyUninstalled": "Fade uninstalled games",
+            "greyUninstalledHelp": "Uninstalled covers appear grey. Turn this off to keep their original colour.",
+            "lastBackup": "Last backup",
+            "lastSaveBackup": "Last save backup",
+            "ludusavi": "Ludusavi save backup",
+            "ludusaviBinary": "Ludusavi binary",
+            "ludusaviCompression": "Zip compression",
+            "ludusaviDetected": "Found Ludusavi {{version}} at {{binary}}. Backups go to {{path}} ({{format}}{{compression}}).",
+            "ludusaviEnabled": "Back up saves when a game closes",
+            "ludusaviFolder": "Save backup folder",
+            "ludusaviFormat": "Backup format",
+            "ludusaviHelp": "When enabled, Heroic Local backs up the game save with Ludusavi after you close a game. Right-click a Collection card to back up that game now.",
+            "ludusaviMissing": "Ludusavi was not found automatically. Set the binary and backup folder below.",
+            "ludusaviNone": "None",
+            "ludusaviSimple": "Simple folder",
+            "ludusaviUseConfig": "Use installed Ludusavi settings (path, zip, compression)",
+            "ludusaviZip": "Zip",
+            "title": "Collection settings"
+        },
+        "showSidebar": "Show sidebar",
+        "sidebar": "Collection",
+        "sort": {
+            "lastPlayed": "Last played",
+            "menu": "Sort",
+            "playtime": "Playtime",
+            "title": "Title"
+        },
+        "status": {
+            "label": "Status",
+            "manage": "Manage statuses…",
+            "manageHelp": "Rename, reorder, or remove statuses. Games on a removed status move to another one.",
+            "manageTitle": "Manage statuses",
+            "menu": "Status",
+            "moveDown": "Move down",
+            "moveUp": "Move up",
+            "remove": "Remove"
+        },
+        "ungrouped": "Other"
     },
     "console": {
         "cancel": {
@@ -614,6 +733,27 @@
         "default": "Loading",
         "website": "Loading Website"
     },
+    "Local": "Local",
+    "localLibrary": {
+        "import": {
+            "confirm": "Import",
+            "covers": "Download covers from Steam / SteamGridDB",
+            "done": "Imported {{imported}}, updated {{updated}}, matched store playtime {{matched}}, skipped {{skipped}}, covers {{covers}}, sessions {{sessions}}.",
+            "drives": "Windows drive mapping (optional)",
+            "emulators": "Emulators",
+            "epicMatch": "Epic playtime matches",
+            "folder": "Playnite library folder",
+            "games": "Games",
+            "gogMatch": "GOG playtime matches",
+            "help": "Select the Playnite library folder (the one that contains games.db). Steam, emulators, and manual games become Local titles. Epic and GOG playtime is matched onto games already in Heroic. Covers are fetched from Steam or SteamGridDB.",
+            "manual": "Manual",
+            "preview": "Preview",
+            "sessions": "Session files",
+            "skipped": "Unmatched store games",
+            "title": "Import Playnite library",
+            "working": "Working…"
+        }
+    },
     "login": {
         "alternative_method": "Alternative Login Method",
         "amazon": "Amazon Login",
@@ -742,7 +882,6 @@
         "nile-version": "Nile Version: ",
         "weblate": "Help translate Heroic."
     },
-    "Other": "Other",
     "placeholder": {
         "alt-gogdl-bin": "Using built-in GOGDL binary...",
         "alt-legendary-bin": "Using built-in Legendary binary...",
