@@ -13,8 +13,10 @@ import { openSteamClientUri } from './steam'
 import {
   clearCollectionGameArt,
   getAllCollectionArt,
-  setCollectionGameArt
+  setCollectionGameArt,
+  setCollectionGameArtFromUrl
 } from './art'
+import { searchCollectionWebImages } from './web-images'
 import { cacheSteamHero, warmSteamHeroes } from './heroes'
 import { getSteamAppDetails } from './steam-details'
 import { initLocalArtProtocol } from './protocol'
@@ -82,6 +84,12 @@ export function registerLocalLibraryIpc() {
   addHandler('getSteamAppDetails', (_e, args) => getSteamAppDetails(args))
   addHandler('getAllCollectionArt', () => getAllCollectionArt())
   addHandler('setCollectionGameArt', (_e, args) => setCollectionGameArt(args))
+  addHandler('searchCollectionWebImages', (_e, args) =>
+    searchCollectionWebImages(args)
+  )
+  addHandler('setCollectionGameArtFromUrl', (_e, args) =>
+    setCollectionGameArtFromUrl(args)
+  )
   addHandler('clearCollectionGameArt', (_e, args) =>
     clearCollectionGameArt(args)
   )

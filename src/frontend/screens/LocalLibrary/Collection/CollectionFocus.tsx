@@ -280,8 +280,9 @@ function CollectionFocusPanel({
     statuses.find((item) => item.id === (meta?.completionStatusId ?? '')) ??
     statuses.find((item) => item.slug === 'not-played')
 
-  const cover = collectionCoverSrc(gameInfo, collectionArt) || fallBackImage
-  const defaultCover = collectionCoverSrc(gameInfo)
+  const cover =
+    collectionCoverSrc(gameInfo, collectionArt, storeAppId) || fallBackImage
+  const defaultCover = collectionCoverSrc(gameInfo, undefined, storeAppId)
   const defaultHero = collectionStageArt(gameInfo, meta, cachedHeroUrl)?.src
   const descriptionHtml = steamDetails?.descriptionHtml
     ? sanitizeSteamDescription(steamDetails.descriptionHtml)
@@ -439,7 +440,13 @@ function CollectionFocusPanel({
                 .join(' · ')}
             </p>
           </div>
-          <CachedImage src={cover} className="collectionFocus__cover" alt="" />
+          <CachedImage
+            key={cover}
+            src={cover}
+            fallback={fallBackImage}
+            className="collectionFocus__cover"
+            alt=""
+          />
         </header>
 
         <div className="collectionFocus__body">

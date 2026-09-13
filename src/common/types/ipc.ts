@@ -70,6 +70,8 @@ import type {
   CollectionSteamDetails,
   CollectionArtKind,
   CollectionGameArt,
+  CollectionWebImage,
+  CollectionWebImageSearchArgs,
   CollectionBackupInterval,
   CollectionBackupResult,
   CollectionSettings,
@@ -284,6 +286,16 @@ interface AsyncIPCFunctions {
     runner: Runner
     kind: CollectionArtKind
     sourcePath: string
+  }) => Promise<CollectionGameArt>
+  searchCollectionWebImages: (
+    args: CollectionWebImageSearchArgs
+  ) => Promise<CollectionWebImage[]>
+  setCollectionGameArtFromUrl: (args: {
+    appName: string
+    runner: Runner
+    kind: CollectionArtKind
+    imageUrl: string
+    thumbUrl?: string
   }) => Promise<CollectionGameArt>
   clearCollectionGameArt: (args: {
     appName: string

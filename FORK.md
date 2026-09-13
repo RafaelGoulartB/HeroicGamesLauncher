@@ -13,27 +13,30 @@ out of Heroic's store architecture. The Local "store" is the existing
 
 ## Upstream hooks (keep these diffs small when merging)
 
-| File                                                          | Change                                                                                |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/common/types/ipc.ts`                                     | IPC methods for Playnite, Steam URI, Collection backup, Steam details, Collection art |
-| `src/backend/storeManagers/sideload/library.ts`               | `init()` / `refresh()` → local install state                                          |
-| `src/backend/storeManagers/sideload/games.ts`                 | Steam URI launch, wait for game, stop PID                                             |
-| `src/backend/launcher.ts`                                     | `recordLocalSession()` / Ludusavi backup after play                                   |
-| `src/preload/api/index.ts`                                    | export `localLibrary`                                                                 |
-| `src/frontend/screens/Game/GamePage/index.tsx`                | session history next to TimeContainer                                                 |
-| `src/frontend/components/UI/LibraryFilters/index.tsx`         | "Other" → "Local"                                                                     |
-| `electron.vite.config.ts`                                     | alias `local-library`                                                                 |
-| `src/backend/main.ts`                                         | `registerLocalArtScheme()` / `initLocalArtProtocol()` next to image cache             |
-| `src/frontend/App.tsx`                                        | Collection is index `/`; Library at `/library`                                        |
-| `src/frontend/components/UI/Sidebar/components/SidebarLinks/` | Collection is home; Library at `/library`                                             |
-| `src/frontend/components/UI/Sidebar/components/SidebarItem/`  | `end` so `/` does not stay active everywhere                                          |
+| File                                                          | Change                                                                                                   |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/common/types/ipc.ts`                                     | IPC methods for Playnite, Steam URI, Collection backup, Steam details, Collection art / web image search |
+| `src/backend/storeManagers/sideload/library.ts`               | `init()` / `refresh()` → local install state                                                             |
+| `src/backend/storeManagers/sideload/games.ts`                 | Steam URI launch, wait for game, stop PID                                                                |
+| `src/backend/launcher.ts`                                     | `recordLocalSession()` / Ludusavi backup after play                                                      |
+| `src/preload/api/index.ts`                                    | export `localLibrary`                                                                                    |
+| `src/frontend/screens/Game/GamePage/index.tsx`                | session history next to TimeContainer                                                                    |
+| `src/frontend/components/UI/LibraryFilters/index.tsx`         | "Other" → "Local"                                                                                        |
+| `electron.vite.config.ts`                                     | alias `local-library`                                                                                    |
+| `src/backend/main.ts`                                         | `registerLocalArtScheme()` / `initLocalArtProtocol()` next to image cache                                |
+| `src/frontend/App.tsx`                                        | Collection is index `/`; Library at `/library`                                                           |
+| `src/frontend/components/UI/Sidebar/components/SidebarLinks/` | Collection is home; Library at `/library`                                                                |
+| `src/frontend/components/UI/Sidebar/components/SidebarItem/`  | `end` so `/` does not stay active everywhere                                                             |
 
 Sidecar data lives in Electron stores `local_library/library` and
 `local_library/sessions`, not in `GameInfo`. Steam Collection heroes are
 copied to `local_library/heroes/{steamAppId}.jpg` and served to the UI via
 `localart://` (HTTP origins cannot load `file://`). Steam store descriptions
 are cached in `local_library/steam-details`. Custom Collection art
-overrides live in `local_library/art` and `local_library/art.json`.
+overrides live in `local_library/art` and `local_library/art.json`. The
+Collection image dialog can search the web (DuckDuckGo, same query Playnite
+uses: `"Title" cover` / `"Title" wallpaper`), download the chosen file, and
+store it like a local upload.
 
 Collection Install/Uninstall for Steam titles (`launchKind: steam-uri`)
 opens the Steam client (`steam://install/<id>` / `steam://uninstall/<id>`)

@@ -403,6 +403,7 @@ export default function Collection() {
       {paintedArt && (
         <div className="collection__stage" aria-hidden>
           <CachedImage
+            key={paintedArt.src}
             src={paintedArt.src}
             fallback={paintedArt.fallback}
             className="collection__stageArt"
@@ -553,7 +554,14 @@ export default function Collection() {
               paintedGame.runner,
               paintedGame.app_name
             )
-            setCollectionArt((current) => ({ ...current, [key]: next }))
+            setCollectionArt((current) => {
+              if (!next.coverUrl && !next.heroUrl) {
+                const rest = { ...current }
+                delete rest[key]
+                return rest
+              }
+              return { ...current, [key]: next }
+            })
           }}
           onClose={() => setFocusedKey(null)}
         />

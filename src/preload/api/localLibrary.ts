@@ -20,6 +20,8 @@ export const localLibrary = {
   getSteamDetails: makeHandlerInvoker('getSteamAppDetails'),
   getAllCollectionArt: makeHandlerInvoker('getAllCollectionArt'),
   setGameArt: makeHandlerInvoker('setCollectionGameArt'),
+  searchWebImages: makeHandlerInvoker('searchCollectionWebImages'),
+  setGameArtFromUrl: makeHandlerInvoker('setCollectionGameArtFromUrl'),
   clearGameArt: makeHandlerInvoker('clearCollectionGameArt'),
   getSettings: makeHandlerInvoker('getCollectionSettings'),
   setUiSettings: makeHandlerInvoker('setCollectionUiSettings'),

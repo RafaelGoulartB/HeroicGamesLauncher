@@ -217,6 +217,21 @@ export interface CollectionGameArt {
   heroUrl?: string
 }
 
+export type CollectionWebImageSource = 'duckduckgo'
+
+export interface CollectionWebImage {
+  imageUrl: string
+  thumbUrl: string
+  width: number
+  height: number
+}
+
+export interface CollectionWebImageSearchArgs {
+  query: string
+  source?: CollectionWebImageSource
+  transparent?: boolean
+}
+
 export type CollectionBackupInterval = 'daily' | 'weekly' | 'monthly'
 
 export interface CollectionBackupSettings {

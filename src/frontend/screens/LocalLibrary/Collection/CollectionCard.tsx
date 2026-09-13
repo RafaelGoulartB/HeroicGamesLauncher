@@ -54,6 +54,7 @@ import PlayIcon from 'frontend/assets/play-icon.svg?react'
 import StopIconAlt from 'frontend/assets/stop-icon-alt.svg?react'
 import DownIcon from 'frontend/assets/down-icon.svg?react'
 import { getCardStatus } from 'frontend/screens/Library/components/GameCard/constants'
+import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
@@ -111,7 +112,11 @@ export default function CollectionCard({
     install: gameInstallInfo
   } = { ...gameInfoFromProps }
   const title = gameInfoFromProps.overrides?.title || gameInfoFromProps.title
-  const cover = collectionCoverSrc(gameInfoFromProps, collectionArt)
+  const cover = collectionCoverSrc(
+    gameInfoFromProps,
+    collectionArt,
+    meta?.steamAppId
+  )
 
   const currentStatusId = meta?.completionStatusId ?? 'not-played'
   const completion =
@@ -623,7 +628,9 @@ export default function CollectionCard({
               }
             >
               <CachedImage
+                key={cover}
                 src={cover}
+                fallback={fallBackImage}
                 className={classNames('collectionCard__image', {
                   installed: isInstalled
                 })}

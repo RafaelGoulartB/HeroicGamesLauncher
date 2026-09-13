@@ -236,7 +236,21 @@
             "hero": "Background",
             "reset": "Reset",
             "saving": "Saving…",
-            "title": "Game images"
+            "searchWeb": "Search web",
+            "title": "Game images",
+            "webSearch": {
+                "downloadFailed": "Could not download the selected image.",
+                "empty": "No images found. Try another search.",
+                "failed": "Could not search images. Try another term.",
+                "help": "Pick an image from the web. Collection saves it like a file you selected yourself.",
+                "loading": "Searching…",
+                "more": "Load more",
+                "saving": "Downloading…",
+                "search": "Search",
+                "select": "Select",
+                "title": "Search images",
+                "transparent": "Transparent"
+            }
         },
         "group": "Group by status",
         "hideSidebar": "Hide sidebar",

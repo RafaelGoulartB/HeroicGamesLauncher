@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogHeader
 } from 'frontend/components/UI/Dialog'
+import CollectionWebImageDialog from './CollectionWebImageDialog'
 import './CollectionGameArtDialog.css'
 
 type Props = {
@@ -43,6 +44,7 @@ export default function CollectionGameArtDialog({
 }: Props) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState<CollectionArtKind | 'clear' | null>(null)
+  const [searchKind, setSearchKind] = useState<CollectionArtKind | null>(null)
   const [error, setError] = useState('')
 
   const coverSrc = art?.coverUrl || defaultCover
@@ -92,106 +94,133 @@ export default function CollectionGameArtDialog({
   }
 
   return (
-    <Dialog
-      onClose={onClose}
-      showCloseButton
-      className="CollectionGameArtDialog"
-    >
-      <DialogHeader>
-        {t('collection.gameArt.title', 'Game images')}
-      </DialogHeader>
-      <DialogContent className="CollectionGameArtDialog__content">
-        <p className="CollectionGameArtDialog__help">
-          {t(
-            'collection.gameArt.help',
-            'These images are used in Collection. Steam art stays cached; a custom file replaces it until you reset.'
-          )}
-        </p>
-        <p className="CollectionGameArtDialog__game">{title}</p>
-
-        <section className="CollectionGameArtDialog__slot">
-          <div className="CollectionGameArtDialog__copy">
-            <h4>{t('collection.gameArt.cover', 'Cover')}</h4>
-            <p>
-              {art?.coverUrl
-                ? t('collection.gameArt.custom', 'Custom image')
-                : t('collection.gameArt.default', 'Default')}
-            </p>
-            <div className="CollectionGameArtDialog__actions">
-              <button
-                type="button"
-                className="button outline"
-                disabled={Boolean(busy)}
-                onClick={() => void pick('cover')}
-              >
-                {busy === 'cover'
-                  ? t('collection.gameArt.saving', 'Saving…')
-                  : t('collection.gameArt.change', 'Change')}
-              </button>
-              <button
-                type="button"
-                className="button outline"
-                disabled={Boolean(busy) || !art?.coverUrl}
-                onClick={() => void reset('cover')}
-              >
-                {t('collection.gameArt.reset', 'Reset')}
-              </button>
-            </div>
-          </div>
-          <div className="CollectionGameArtDialog__preview CollectionGameArtDialog__preview--cover">
-            {coverSrc ? (
-              <CachedImage src={coverSrc} alt="" />
-            ) : (
-              <span>{t('collection.gameArt.empty', 'No image')}</span>
+    <>
+      <Dialog
+        onClose={onClose}
+        showCloseButton
+        className="CollectionGameArtDialog"
+      >
+        <DialogHeader>
+          {t('collection.gameArt.title', 'Game images')}
+        </DialogHeader>
+        <DialogContent className="CollectionGameArtDialog__content">
+          <p className="CollectionGameArtDialog__help">
+            {t(
+              'collection.gameArt.help',
+              'These images are used in Collection. Steam art stays cached; a custom file replaces it until you reset.'
             )}
-          </div>
-        </section>
+          </p>
+          <p className="CollectionGameArtDialog__game">{title}</p>
 
-        <section className="CollectionGameArtDialog__slot CollectionGameArtDialog__slot--hero">
-          <div className="CollectionGameArtDialog__copy">
-            <h4>{t('collection.gameArt.hero', 'Background')}</h4>
-            <p>
-              {art?.heroUrl
-                ? t('collection.gameArt.custom', 'Custom image')
-                : t('collection.gameArt.default', 'Default')}
-            </p>
-            <div className="CollectionGameArtDialog__actions">
-              <button
-                type="button"
-                className="button outline"
-                disabled={Boolean(busy)}
-                onClick={() => void pick('hero')}
-              >
-                {busy === 'hero'
-                  ? t('collection.gameArt.saving', 'Saving…')
-                  : t('collection.gameArt.change', 'Change')}
-              </button>
-              <button
-                type="button"
-                className="button outline"
-                disabled={Boolean(busy) || !art?.heroUrl}
-                onClick={() => void reset('hero')}
-              >
-                {t('collection.gameArt.reset', 'Reset')}
-              </button>
+          <section className="CollectionGameArtDialog__slot">
+            <div className="CollectionGameArtDialog__copy">
+              <h4>{t('collection.gameArt.cover', 'Cover')}</h4>
+              <p>
+                {art?.coverUrl
+                  ? t('collection.gameArt.custom', 'Custom image')
+                  : t('collection.gameArt.default', 'Default')}
+              </p>
+              <div className="CollectionGameArtDialog__actions">
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={Boolean(busy)}
+                  onClick={() => void pick('cover')}
+                >
+                  {busy === 'cover'
+                    ? t('collection.gameArt.saving', 'Saving…')
+                    : t('collection.gameArt.change', 'Change')}
+                </button>
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={Boolean(busy)}
+                  onClick={() => setSearchKind('cover')}
+                >
+                  {t('collection.gameArt.searchWeb', 'Search web')}
+                </button>
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={Boolean(busy) || !art?.coverUrl}
+                  onClick={() => void reset('cover')}
+                >
+                  {t('collection.gameArt.reset', 'Reset')}
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="CollectionGameArtDialog__preview CollectionGameArtDialog__preview--hero">
-            {heroSrc ? (
-              <CachedImage src={heroSrc} alt="" />
-            ) : (
-              <span>{t('collection.gameArt.empty', 'No image')}</span>
-            )}
-          </div>
-        </section>
+            <div className="CollectionGameArtDialog__preview CollectionGameArtDialog__preview--cover">
+              {coverSrc ? (
+                <CachedImage key={coverSrc} src={coverSrc} alt="" />
+              ) : (
+                <span>{t('collection.gameArt.empty', 'No image')}</span>
+              )}
+            </div>
+          </section>
 
-        {error && <p className="CollectionGameArtDialog__error">{error}</p>}
-      </DialogContent>
-      <DialogFooter>
-        <button className="button is-primary" onClick={onClose}>
-          {t('box.close', 'Close')}
-        </button>
-      </DialogFooter>
-    </Dialog>
+          <section className="CollectionGameArtDialog__slot CollectionGameArtDialog__slot--hero">
+            <div className="CollectionGameArtDialog__copy">
+              <h4>{t('collection.gameArt.hero', 'Background')}</h4>
+              <p>
+                {art?.heroUrl
+                  ? t('collection.gameArt.custom', 'Custom image')
+                  : t('collection.gameArt.default', 'Default')}
+              </p>
+              <div className="CollectionGameArtDialog__actions">
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={Boolean(busy)}
+                  onClick={() => void pick('hero')}
+                >
+                  {busy === 'hero'
+                    ? t('collection.gameArt.saving', 'Saving…')
+                    : t('collection.gameArt.change', 'Change')}
+                </button>
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={Boolean(busy)}
+                  onClick={() => setSearchKind('hero')}
+                >
+                  {t('collection.gameArt.searchWeb', 'Search web')}
+                </button>
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={Boolean(busy) || !art?.heroUrl}
+                  onClick={() => void reset('hero')}
+                >
+                  {t('collection.gameArt.reset', 'Reset')}
+                </button>
+              </div>
+            </div>
+            <div className="CollectionGameArtDialog__preview CollectionGameArtDialog__preview--hero">
+              {heroSrc ? (
+                <CachedImage key={heroSrc} src={heroSrc} alt="" />
+              ) : (
+                <span>{t('collection.gameArt.empty', 'No image')}</span>
+              )}
+            </div>
+          </section>
+
+          {error && <p className="CollectionGameArtDialog__error">{error}</p>}
+        </DialogContent>
+        <DialogFooter>
+          <button className="button is-primary" onClick={onClose}>
+            {t('box.close', 'Close')}
+          </button>
+        </DialogFooter>
+      </Dialog>
+      {searchKind && (
+        <CollectionWebImageDialog
+          game={game}
+          title={title}
+          kind={searchKind}
+          onChange={onChange}
+          onClose={() => setSearchKind(null)}
+        />
+      )}
+    </>
   )
 }

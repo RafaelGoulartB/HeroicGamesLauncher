@@ -18,23 +18,48 @@ function isLocalSrc(src: string) {
   )
 }
 
+function isManagedArt(src?: string) {
+  return Boolean(src?.startsWith('localart:'))
+}
+
+export function steamLibraryCover(steamAppId: string) {
+  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`
+}
+
+export function steamLibraryHero(steamAppId: string) {
+  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${steamAppId}/library_hero_2x.jpg`
+}
+
+function firstDefaultSrc(values: (string | undefined)[]) {
+  for (const value of values) {
+    if (!value || isManagedArt(value)) continue
+    return value
+  }
+  return ''
+}
+
 export function collectionCoverSrc(
   game: GameInfo,
-  art?: CollectionGameArt
+  art?: CollectionGameArt,
+  steamAppId?: string
 ): string {
   if (art?.coverUrl) return art.coverUrl
-  const raw =
-    game.overrides?.art_square ||
-    game.art_square ||
-    game.art_cover ||
+  const steam = steamAppId ? steamLibraryCover(steamAppId) : ''
+  const raw = firstDefaultSrc([
+    game.overrides?.art_square,
+    game.art_square,
+    game.art_cover,
+    steam,
     fallBackImage
+  ])
+  if (!raw) return fallBackImage
   if (isLocalSrc(raw)) return raw
   return getImageFormatting(raw, game.runner)
 }
 
 export function collectionStageArt(
   game: GameInfo,
-  _meta?: LocalGameMeta,
+  meta?: LocalGameMeta,
   cachedHeroUrl?: string,
   customHeroUrl?: string
 ): { src: string; fallback?: string } | null {
@@ -46,11 +71,16 @@ export function collectionStageArt(
     return { src: cachedHeroUrl }
   }
 
-  const src =
-    game.art_background ||
-    game.overrides?.art_cover ||
-    game.art_cover ||
+  const steamHero = meta?.steamAppId
+    ? steamLibraryHero(meta.steamAppId)
+    : undefined
+  const src = firstDefaultSrc([
+    game.art_background,
+    game.overrides?.art_cover,
+    game.art_cover,
+    steamHero,
     game.art_square
+  ])
   if (!src) return null
-  return { src }
+  return { src, fallback: steamHero }
 }
