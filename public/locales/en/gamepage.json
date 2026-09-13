@@ -108,6 +108,9 @@
             "notes": "Notes",
             "overview": "Overview"
         },
+        "gameArt": {
+            "title": "Game images"
+        },
         "ludusavi": {
             "backup": "Backup save (Ludusavi)",
             "busy": "Ludusavi is already backing up a save. Wait a moment and try again.",

@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material'
 import type { FavouriteGame, GameInfo, HiddenGame, Runner } from 'common/types'
 import type {
+  CollectionGameArt,
   CompletionStatus,
   LocalGameMeta
 } from 'common/types/local-library'
@@ -49,18 +50,15 @@ import {
 import { updateGame } from 'frontend/helpers/library'
 import { hasProgress } from 'frontend/hooks/hasProgress'
 import { hasStatus } from 'frontend/hooks/hasStatus'
-import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import PlayIcon from 'frontend/assets/play-icon.svg?react'
 import StopIconAlt from 'frontend/assets/stop-icon-alt.svg?react'
 import DownIcon from 'frontend/assets/down-icon.svg?react'
-import {
-  getCardStatus,
-  getImageFormatting
-} from 'frontend/screens/Library/components/GameCard/constants'
+import { getCardStatus } from 'frontend/screens/Library/components/GameCard/constants'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
+import { collectionCoverSrc } from './steamArt'
 import './CollectionCard.css'
 
 const storage: Storage = window.localStorage
@@ -68,6 +66,7 @@ const storage: Storage = window.localStorage
 type Props = {
   gameInfo: GameInfo
   meta?: LocalGameMeta
+  collectionArt?: CollectionGameArt
   statuses: CompletionStatus[]
   isRecent?: boolean
   isFocused?: boolean
@@ -78,6 +77,7 @@ type Props = {
 export default function CollectionCard({
   gameInfo: gameInfoFromProps,
   meta,
+  collectionArt,
   statuses,
   isRecent = false,
   isFocused = false,
@@ -111,11 +111,7 @@ export default function CollectionCard({
     install: gameInstallInfo
   } = { ...gameInfoFromProps }
   const title = gameInfoFromProps.overrides?.title || gameInfoFromProps.title
-  const cover =
-    gameInfoFromProps.overrides?.art_square ||
-    gameInfoFromProps.art_square ||
-    gameInfoFromProps.art_cover ||
-    fallBackImage
+  const cover = collectionCoverSrc(gameInfoFromProps, collectionArt)
 
   const currentStatusId = meta?.completionStatusId ?? 'not-played'
   const completion =
@@ -627,7 +623,7 @@ export default function CollectionCard({
               }
             >
               <CachedImage
-                src={getImageFormatting(cover, runner)}
+                src={cover}
                 className={classNames('collectionCard__image', {
                   installed: isInstalled
                 })}

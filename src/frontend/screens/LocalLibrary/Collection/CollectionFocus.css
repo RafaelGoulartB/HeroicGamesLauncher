@@ -231,8 +231,20 @@
   z-index: 3;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
   padding: 0.7rem 1.25rem 1rem;
+}
+
+.collectionFocus__footer .collectionFocus__iconBtn {
+  width: 42px;
+  height: 42px;
+  background: rgba(16, 18, 22, 0.72);
+}
+
+.collectionFocus__iconBtn.is-active {
+  color: #f5c518;
 }
 
 .collectionFocus__play {

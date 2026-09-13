@@ -142,6 +142,7 @@
         "select": {
             "button": "Select",
             "exe": "Select EXE",
+            "image": "Select Image",
             "script": "Select script ..."
         },
         "shortcuts": {
@@ -223,6 +224,18 @@
             "all": "All games",
             "installed": "Installed",
             "uninstalled": "Not installed / Uninstalled"
+        },
+        "gameArt": {
+            "change": "Change",
+            "cover": "Cover",
+            "custom": "Custom image",
+            "default": "Default",
+            "empty": "No image",
+            "help": "These images are used in Collection. Steam art stays cached; a custom file replaces it until you reset.",
+            "hero": "Background",
+            "reset": "Reset",
+            "saving": "Saving…",
+            "title": "Game images"
         },
         "group": "Group by status",
         "hideSidebar": "Hide sidebar",

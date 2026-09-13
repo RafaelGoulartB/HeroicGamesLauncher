@@ -17,6 +17,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu, MenuOpen, Settings } from '@mui/icons-material'
 import type { GameInfo } from 'common/types'
 import type {
+  CollectionGameArt,
   CompletionStatus,
   LocalGameMeta
 } from 'common/types/local-library'
@@ -32,6 +33,7 @@ import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
+import { collectionArtKey, collectionStageArt } from './steamArt'
 import './index.css'
 
 type InstallFilter = 'all' | 'installed' | 'uninstalled'
@@ -90,15 +92,6 @@ function lastPlayedAt(appName: string): string {
   return timestampStore.get_nodefault(appName)?.lastPlayed ?? ''
 }
 
-function stageArt(game: GameInfo) {
-  return (
-    game.art_background ||
-    game.overrides?.art_cover ||
-    game.art_cover ||
-    game.art_square
-  )
-}
-
 export default function Collection() {
   const { t } = useTranslation()
   const { epic, gog, amazon, zoom, sideloadedLibrary, allTilesInColor } =
@@ -114,6 +107,10 @@ export default function Collection() {
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const [stageGame, setStageGame] = useState<GameInfo | null>(null)
+  const [heroCache, setHeroCache] = useState<Record<string, string>>({})
+  const [collectionArt, setCollectionArt] = useState<
+    Record<string, CollectionGameArt>
+  >({})
   const [recentAppNames, setRecentAppNames] = useState<Set<string>>(
     () => new Set()
   )
@@ -134,12 +131,14 @@ export default function Collection() {
   }
 
   async function reload() {
-    const [nextStatuses, nextMetas] = await Promise.all([
+    const [nextStatuses, nextMetas, nextArt] = await Promise.all([
       window.api.localLibrary.getStatuses(),
-      window.api.localLibrary.getAllMeta()
+      window.api.localLibrary.getAllMeta(),
+      window.api.localLibrary.getAllCollectionArt()
     ])
     setStatuses(nextStatuses)
     setMetas(nextMetas)
+    setCollectionArt(nextArt)
   }
 
   useEffect(() => {
@@ -169,11 +168,14 @@ export default function Collection() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setFocusedKey(null)
+      if (event.key === 'Escape') {
+        if (settingsOpen) return
+        setFocusedKey(null)
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [settingsOpen])
 
   const games = useMemo(() => {
     const all: GameInfo[] = [
@@ -250,6 +252,36 @@ export default function Collection() {
   }, [focusedKey, games])
 
   const paintedGame = focusedGame ?? stageGame
+  const paintedMeta = paintedGame ? metas[paintedGame.app_name] : undefined
+  const paintedArt = paintedGame
+    ? collectionStageArt(
+        paintedGame,
+        paintedMeta,
+        paintedMeta?.steamAppId ? heroCache[paintedMeta.steamAppId] : undefined,
+        collectionArt[
+          collectionArtKey(paintedGame.runner, paintedGame.app_name)
+        ]?.heroUrl
+      )
+    : null
+
+  useEffect(() => {
+    const steamAppId = paintedMeta?.steamAppId
+    if (!steamAppId) return
+    const cacheHero = window.api.localLibrary.cacheSteamHero
+    if (typeof cacheHero !== 'function') return
+    let cancelled = false
+    void cacheHero(steamAppId).then((result) => {
+      if (cancelled || !result?.url) return
+      setHeroCache((current) =>
+        current[steamAppId] === result.url
+          ? current
+          : { ...current, [steamAppId]: result.url }
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [paintedMeta?.steamAppId])
 
   useEffect(() => {
     if (focusedGame) {
@@ -318,6 +350,9 @@ export default function Collection() {
         key={gameKey(game)}
         gameInfo={game}
         meta={metas[game.app_name]}
+        collectionArt={
+          collectionArt[collectionArtKey(game.runner, game.app_name)]
+        }
         statuses={statuses}
         isRecent={recentAppNames.has(game.app_name)}
         isFocused={focusedKey === gameKey(game)}
@@ -334,10 +369,11 @@ export default function Collection() {
         'collection--focused': Boolean(focusedGame)
       })}
     >
-      {paintedGame && stageArt(paintedGame) && (
+      {paintedArt && (
         <div className="collection__stage" aria-hidden>
           <CachedImage
-            src={stageArt(paintedGame)}
+            src={paintedArt.src}
+            fallback={paintedArt.fallback}
             className="collection__stageArt"
             alt=""
           />
@@ -479,7 +515,27 @@ export default function Collection() {
         <CollectionFocus
           game={paintedGame}
           meta={paintedGame ? metas[paintedGame.app_name] : undefined}
+          collectionArt={
+            paintedGame
+              ? collectionArt[
+                  collectionArtKey(paintedGame.runner, paintedGame.app_name)
+                ]
+              : undefined
+          }
+          cachedHeroUrl={
+            paintedMeta?.steamAppId
+              ? heroCache[paintedMeta.steamAppId]
+              : undefined
+          }
           statuses={statuses}
+          onArtChange={(next) => {
+            if (!paintedGame) return
+            const key = collectionArtKey(
+              paintedGame.runner,
+              paintedGame.app_name
+            )
+            setCollectionArt((current) => ({ ...current, [key]: next }))
+          }}
           onClose={() => setFocusedKey(null)}
         />
       </div>

@@ -6,15 +6,20 @@ import {
   Download,
   OpenInNew,
   PlayArrow,
+  Settings,
+  Star,
+  StarBorder,
   Stop
 } from '@mui/icons-material'
 import type {
   ExtraInfo,
+  FavouriteGame,
   GameAchievement,
   GameInfo,
   WikiInfo
 } from 'common/types'
 import type {
+  CollectionGameArt,
   CompletionStatus,
   LocalGameMeta,
   LocalGameSource
@@ -26,14 +31,13 @@ import { getGameInfo, install, launch, sendKill } from 'frontend/helpers'
 import { openInstallGameModal } from 'frontend/state/InstallGameModal'
 import { hasProgress } from 'frontend/hooks/hasProgress'
 import { hasStatus } from 'frontend/hooks/hasStatus'
-import {
-  getCardStatus,
-  getImageFormatting
-} from 'frontend/screens/Library/components/GameCard/constants'
+import { getCardStatus } from 'frontend/screens/Library/components/GameCard/constants'
 import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
+import { collectionCoverSrc, collectionStageArt } from './steamArt'
+import CollectionGameArtDialog from './CollectionGameArtDialog'
 import './CollectionFocus.css'
 
 const SOURCE_LABELS: Record<LocalGameSource, string> = {
@@ -51,6 +55,9 @@ type Props = {
   game: GameInfo | null
   meta?: LocalGameMeta
   statuses: CompletionStatus[]
+  collectionArt?: CollectionGameArt
+  cachedHeroUrl?: string
+  onArtChange: (art: CollectionGameArt) => void
   onClose: () => void
 }
 
@@ -98,6 +105,9 @@ export default function CollectionFocus({
   game,
   meta,
   statuses,
+  collectionArt,
+  cachedHeroUrl,
+  onArtChange,
   onClose
 }: Props) {
   if (!game) {
@@ -106,9 +116,13 @@ export default function CollectionFocus({
 
   return (
     <CollectionFocusPanel
+      key={`${game.runner}_${game.app_name}`}
       game={game}
       meta={meta}
       statuses={statuses}
+      collectionArt={collectionArt}
+      cachedHeroUrl={cachedHeroUrl}
+      onArtChange={onArtChange}
       onClose={onClose}
     />
   )
@@ -118,18 +132,25 @@ function CollectionFocusPanel({
   game,
   meta,
   statuses,
+  collectionArt,
+  cachedHeroUrl,
+  onArtChange,
   onClose
 }: {
   game: GameInfo
   meta?: LocalGameMeta
   statuses: CompletionStatus[]
+  collectionArt?: CollectionGameArt
+  cachedHeroUrl?: string
+  onArtChange: (art: CollectionGameArt) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
   const { t: tGame } = useTranslation('gamepage')
   const navigate = useNavigate()
-  const { showDialogModal, connectivity, gameUpdates } =
+  const { showDialogModal, connectivity, gameUpdates, favouriteGames } =
     useContext(ContextProvider)
+  const [artOpen, setArtOpen] = useState(false)
 
   const [gameInfo, setGameInfo] = useState<GameInfo>(game)
   const [extraInfo, setExtraInfo] = useState<ExtraInfo | null>(
@@ -183,6 +204,20 @@ function CollectionFocusPanel({
     getCardStatus(status, isInstalled, 'grid')
   const isTrackingTime = isPlaying || isLaunching
   const hasUpdate = Boolean(isInstalled && gameUpdates?.includes(appName))
+  const isFavouriteGame = Boolean(
+    favouriteGames.list.find((item: FavouriteGame) => item.appName === appName)
+  )
+
+  useEffect(() => {
+    if (!artOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.stopImmediatePropagation()
+      setArtOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
+  }, [artOpen])
 
   useEffect(() => {
     setPlayedMinutes(timestampStore.get_nodefault(appName)?.totalPlayed ?? 0)
@@ -192,13 +227,9 @@ function CollectionFocusPanel({
     statuses.find((item) => item.id === (meta?.completionStatusId ?? '')) ??
     statuses.find((item) => item.slug === 'not-played')
 
-  const cover = getImageFormatting(
-    gameInfo.overrides?.art_square ||
-      gameInfo.art_square ||
-      gameInfo.art_cover ||
-      fallBackImage,
-    runner
-  )
+  const cover = collectionCoverSrc(gameInfo, collectionArt) || fallBackImage
+  const defaultCover = collectionCoverSrc(gameInfo)
+  const defaultHero = collectionStageArt(gameInfo, meta, cachedHeroUrl)?.src
   const description = toPlainText(
     extraInfo?.about?.shortDescription ||
       extraInfo?.about?.description ||
@@ -463,6 +494,36 @@ function CollectionFocusPanel({
       <footer className="collectionFocus__footer">
         <button
           type="button"
+          className={
+            isFavouriteGame
+              ? 'collectionFocus__iconBtn is-active'
+              : 'collectionFocus__iconBtn'
+          }
+          title={
+            isFavouriteGame
+              ? tGame('button.remove_from_favourites', 'Remove From Favourites')
+              : tGame('button.add_to_favourites', 'Add To Favourites')
+          }
+          aria-pressed={isFavouriteGame}
+          onClick={() =>
+            isFavouriteGame
+              ? favouriteGames.remove(appName)
+              : favouriteGames.add(appName, title)
+          }
+        >
+          {isFavouriteGame ? <Star /> : <StarBorder />}
+        </button>
+        <button
+          type="button"
+          className="collectionFocus__iconBtn"
+          title={t('collection.gameArt.title', 'Game images')}
+          aria-label={t('collection.gameArt.title', 'Game images')}
+          onClick={() => setArtOpen(true)}
+        >
+          <Settings />
+        </button>
+        <button
+          type="button"
           className="collectionFocus__play"
           disabled={isLaunching}
           onClick={handlePrimary}
@@ -471,6 +532,17 @@ function CollectionFocusPanel({
           {primaryLabel}
         </button>
       </footer>
+      {artOpen && (
+        <CollectionGameArtDialog
+          game={gameInfo}
+          title={title}
+          art={collectionArt}
+          defaultCover={defaultCover}
+          defaultHero={defaultHero}
+          onChange={onArtChange}
+          onClose={() => setArtOpen(false)}
+        />
+      )}
     </aside>
   )
 }
