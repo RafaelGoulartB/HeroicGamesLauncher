@@ -18,6 +18,7 @@ import type {
   PlaynitePreviewArgs
 } from 'common/types/local-library'
 import { fetchCoversForGame } from './covers'
+import { seedPlayniteMetadata } from './metadata'
 import {
   mapPlayniteGame,
   MappedPlayniteGame,
@@ -310,6 +311,12 @@ export async function importPlayniteLibrary(
           mapped.lastPlayed
         )
         mergeLocalSessions(mapped.meta.appName, mapped.sessions)
+        await seedPlayniteMetadata({
+          appName: mapped.meta.appName,
+          runner: mapped.meta.runner,
+          game,
+          libraryPath: dump.libraryPath
+        })
         result.sessionsImported += mapped.sessions.length
         result.updated += 1
         if (
@@ -342,6 +349,12 @@ export async function importPlayniteLibrary(
           mapped.lastPlayed
         )
         mergeLocalSessions(matched.app_name, mapped.sessions)
+        await seedPlayniteMetadata({
+          appName: mapped.meta.appName,
+          runner: mapped.meta.runner,
+          game,
+          libraryPath: dump.libraryPath
+        })
         result.sessionsImported += mapped.sessions.length
         result.matchedStore += 1
         continue
@@ -380,6 +393,12 @@ export async function importPlayniteLibrary(
         mapped.lastPlayed
       )
       mergeLocalSessions(mapped.meta.appName, mapped.sessions)
+      await seedPlayniteMetadata({
+        appName: mapped.meta.appName,
+        runner: mapped.meta.runner,
+        game,
+        libraryPath: dump.libraryPath
+      })
       await applyLauncherArgs(mapped.meta.appName, mapped.meta.launcherArgs)
       result.sessionsImported += mapped.sessions.length
       if (existed) result.updated += 1

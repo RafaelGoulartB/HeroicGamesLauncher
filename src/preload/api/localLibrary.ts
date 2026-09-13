@@ -1,4 +1,4 @@
-import { makeHandlerInvoker } from '../ipc'
+import { frontendListenerSlot, makeHandlerInvoker } from '../ipc'
 
 export const localLibrary = {
   previewImport: makeHandlerInvoker('previewPlayniteImport'),
@@ -28,5 +28,16 @@ export const localLibrary = {
   setBackupSettings: makeHandlerInvoker('setCollectionBackupSettings'),
   runBackup: makeHandlerInvoker('runCollectionBackup'),
   setLudusaviSettings: makeHandlerInvoker('setLudusaviSettings'),
-  runLudusaviBackup: makeHandlerInvoker('runLudusaviBackup')
+  runLudusaviBackup: makeHandlerInvoker('runLudusaviBackup'),
+  setMetadataSettings: makeHandlerInvoker('setCollectionMetadataSettings'),
+  testIgdbCredentials: makeHandlerInvoker('testIgdbCredentials'),
+  getAllMetadata: makeHandlerInvoker('getAllCollectionMetadata'),
+  getGameMetadata: makeHandlerInvoker('getCollectionGameMetadata'),
+  previewMetadata: makeHandlerInvoker('previewCollectionMetadata'),
+  applyMetadata: makeHandlerInvoker('applyCollectionMetadata'),
+  searchMetadata: makeHandlerInvoker('searchCollectionMetadata'),
+  startMetadataBulk: makeHandlerInvoker('startCollectionMetadataBulk'),
+  getMetadataBulkStatus: makeHandlerInvoker('getCollectionMetadataBulkStatus'),
+  cancelMetadataBulk: makeHandlerInvoker('cancelCollectionMetadataBulk'),
+  onMetadataBulkProgress: frontendListenerSlot('collectionMetadataBulkProgress')
 }

@@ -76,7 +76,15 @@ import type {
   CollectionBackupResult,
   CollectionSettings,
   LudusaviBackupResult,
-  LudusaviSettings
+  LudusaviSettings,
+  CollectionGameMetadata,
+  CollectionMetadataApplyArgs,
+  CollectionMetadataBulkArgs,
+  CollectionMetadataBulkProgress,
+  CollectionMetadataPreview,
+  CollectionMetadataSearchHit,
+  CollectionMetadataSettings,
+  IgdbCredentialTest
 } from './local-library'
 
 // ts-prune-ignore-next
@@ -331,6 +339,31 @@ interface AsyncIPCFunctions {
     steamAppId?: string
     storeGameId?: string
   }) => Promise<LudusaviBackupResult>
+  setCollectionMetadataSettings: (
+    args: Partial<CollectionMetadataSettings>
+  ) => Promise<CollectionSettings>
+  testIgdbCredentials: () => Promise<IgdbCredentialTest>
+  getAllCollectionMetadata: () => Promise<
+    Record<string, CollectionGameMetadata>
+  >
+  getCollectionGameMetadata: (args: {
+    runner: string
+    appName: string
+  }) => Promise<CollectionGameMetadata | undefined>
+  previewCollectionMetadata: (
+    args: CollectionMetadataApplyArgs
+  ) => Promise<CollectionMetadataPreview>
+  applyCollectionMetadata: (
+    args: CollectionMetadataApplyArgs
+  ) => Promise<CollectionGameMetadata>
+  searchCollectionMetadata: (args: {
+    title: string
+  }) => Promise<CollectionMetadataSearchHit[]>
+  startCollectionMetadataBulk: (
+    args: CollectionMetadataBulkArgs
+  ) => Promise<CollectionMetadataBulkProgress>
+  getCollectionMetadataBulkStatus: () => Promise<CollectionMetadataBulkProgress>
+  cancelCollectionMetadataBulk: () => Promise<CollectionMetadataBulkProgress>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>
@@ -523,6 +556,9 @@ interface FrontendMessages {
       string,
       { title?: string; art_cover?: string; art_square?: string }
     >
+  ) => void
+  collectionMetadataBulkProgress: (
+    progress: CollectionMetadataBulkProgress
   ) => void
 
   // Used inside tests, so we can be a bit lenient with the type checking here

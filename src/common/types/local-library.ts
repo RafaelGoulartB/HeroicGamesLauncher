@@ -242,11 +242,191 @@ export interface CollectionBackupSettings {
   lastError?: string
 }
 
+export type MetadataSourceId =
+  | 'igdb'
+  | 'steam'
+  | 'store'
+  | 'playnite'
+  | 'lutris'
+  | 'manual'
+
+export type MetadataField =
+  | 'description'
+  | 'releaseDate'
+  | 'developers'
+  | 'publishers'
+  | 'genres'
+  | 'themes'
+  | 'gameModes'
+  | 'platforms'
+  | 'series'
+  | 'features'
+  | 'criticScore'
+  | 'cover'
+  | 'hero'
+
+export const METADATA_FIELDS: MetadataField[] = [
+  'description',
+  'releaseDate',
+  'developers',
+  'publishers',
+  'genres',
+  'themes',
+  'gameModes',
+  'platforms',
+  'series',
+  'features',
+  'criticScore',
+  'cover',
+  'hero'
+]
+
+export type CoverAspectPreset =
+  | 'steam'
+  | 'igdb'
+  | 'gog'
+  | 'square'
+  | 'dvd'
+  | 'banner'
+
+export const DEFAULT_FIELD_PRIORITY: Record<MetadataField, MetadataSourceId[]> =
+  {
+    description: ['igdb', 'steam', 'store', 'lutris', 'playnite'],
+    releaseDate: ['igdb', 'steam', 'store', 'lutris', 'playnite'],
+    developers: ['igdb', 'steam', 'store', 'playnite', 'lutris'],
+    publishers: ['igdb', 'steam', 'store', 'playnite'],
+    genres: ['igdb', 'steam', 'store', 'playnite', 'lutris'],
+    themes: ['igdb', 'playnite'],
+    gameModes: ['igdb'],
+    platforms: ['igdb', 'store', 'playnite', 'lutris'],
+    series: ['igdb', 'playnite'],
+    features: ['igdb', 'steam', 'playnite'],
+    criticScore: ['igdb', 'steam'],
+    cover: ['igdb', 'steam', 'lutris', 'playnite', 'store'],
+    hero: ['igdb', 'steam', 'lutris', 'playnite']
+  }
+
+export interface CollectionMetadataSettings {
+  igdbClientId: string
+  igdbClientSecret: string
+  coverAspect: CoverAspectPreset
+  downloadImages: boolean
+  autoFillMissing: boolean
+  fieldPriority: Record<MetadataField, MetadataSourceId[]>
+}
+
+export interface CollectionGameMetadata {
+  appName: string
+  runner: string
+  igdbId?: number
+  igdbSlug?: string
+  lutrisSlug?: string
+  steamAppId?: string
+  title?: string
+  description?: string
+  releaseDate?: string
+  developers: string[]
+  publishers: string[]
+  genres: string[]
+  themes: string[]
+  gameModes: string[]
+  platforms: string[]
+  series?: string
+  features: string[]
+  criticScore?: number
+  websites: string[]
+  coverUrl?: string
+  heroUrl?: string
+  fieldSources: Partial<Record<MetadataField, MetadataSourceId>>
+  fetchedAt?: string
+  fetchError?: string
+}
+
+export interface CollectionMetadataCandidate {
+  source: MetadataSourceId
+  matchName?: string
+  matchYear?: number
+  metadata: CollectionGameMetadata
+}
+
+export interface CollectionMetadataPreview {
+  appName: string
+  current?: CollectionGameMetadata
+  proposed: CollectionGameMetadata
+  candidates: CollectionMetadataCandidate[]
+  igdbConfigured: boolean
+}
+
+export interface CollectionMetadataApplyArgs {
+  appName: string
+  runner: string
+  title: string
+  steamAppId?: string
+  source?: MetadataSourceId | 'auto'
+  fieldPicks?: Partial<Record<MetadataField, MetadataSourceId | 'keep'>>
+  overwriteExisting?: boolean
+  downloadImages?: boolean
+  igdbId?: number
+  lutrisSlug?: string
+}
+
+export interface CollectionMetadataSearchHit {
+  source: MetadataSourceId
+  id: string
+  name: string
+  year?: number
+  extra?: string
+}
+
+export interface CollectionMetadataBulkItem {
+  appName: string
+  runner: string
+  title: string
+  steamAppId?: string
+}
+
+export interface CollectionMetadataBulkArgs {
+  games: CollectionMetadataBulkItem[]
+  overwriteExisting?: boolean
+  downloadImages?: boolean
+}
+
+export interface CollectionMetadataBulkResult {
+  updated: number
+  skipped: number
+  failed: number
+  errors: string[]
+}
+
+export type CollectionMetadataBulkState =
+  | 'idle'
+  | 'running'
+  | 'cancelling'
+  | 'done'
+
+export interface CollectionMetadataBulkProgress {
+  state: CollectionMetadataBulkState
+  total: number
+  processed: number
+  updated: number
+  skipped: number
+  failed: number
+  percent: number
+  currentTitle?: string
+  errors: string[]
+}
+
+export interface IgdbCredentialTest {
+  ok: boolean
+  error?: string
+}
+
 export interface CollectionSettings {
   backup: CollectionBackupSettings
   ludusavi: LudusaviSettings
   ludusaviDetected?: LudusaviDetectedConfig
   greyUninstalledGames: boolean
+  metadata: CollectionMetadataSettings
 }
 
 export type LudusaviBackupFormat = 'simple' | 'zip'

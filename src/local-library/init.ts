@@ -24,6 +24,7 @@ import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
 import {
   getCollectionSettings,
   setCollectionBackupSettings,
+  setCollectionMetadataSettings,
   setCollectionUiSettings,
   setLudusaviSettings
 } from './settings'
@@ -43,6 +44,18 @@ import {
   getLocalGameMeta,
   getLocalSessions
 } from './stores'
+import {
+  applyGameMetadata,
+  cancelBulkMetadata,
+  getAllCollectionMetadata,
+  getBulkMetadataProgress,
+  getCollectionGameMetadata,
+  previewGameMetadata,
+  refreshMissingCollectionMetadata,
+  searchGameMetadata,
+  startBulkMetadata,
+  testIgdbCredentials
+} from './metadata'
 
 let registered = false
 
@@ -119,6 +132,26 @@ export function registerLocalLibraryIpc() {
   addHandler('runLudusaviBackup', (_e, args) =>
     backupLudusaviForGame({ ...args, reason: 'manual' })
   )
+  addHandler('setCollectionMetadataSettings', async (_e, args) => {
+    const settings = setCollectionMetadataSettings(args)
+    const ludusaviDetected = await detectLudusavi(settings.ludusavi.binaryPath)
+    return { ...settings, ludusaviDetected }
+  })
+  addHandler('testIgdbCredentials', () => testIgdbCredentials())
+  addHandler('getAllCollectionMetadata', () => getAllCollectionMetadata())
+  addHandler('getCollectionGameMetadata', (_e, args) =>
+    getCollectionGameMetadata(args.runner, args.appName)
+  )
+  addHandler('previewCollectionMetadata', (_e, args) =>
+    previewGameMetadata(args)
+  )
+  addHandler('applyCollectionMetadata', (_e, args) => applyGameMetadata(args))
+  addHandler('searchCollectionMetadata', (_e, args) => searchGameMetadata(args))
+  addHandler('startCollectionMetadataBulk', (_e, args) =>
+    startBulkMetadata(args)
+  )
+  addHandler('getCollectionMetadataBulkStatus', () => getBulkMetadataProgress())
+  addHandler('cancelCollectionMetadataBulk', () => cancelBulkMetadata())
 }
 
 export async function initLocalLibrary() {
@@ -137,5 +170,6 @@ export async function initLocalLibrary() {
       .map((meta) => meta.steamAppId)
       .filter((id): id is string => Boolean(id))
   )
+  void refreshMissingCollectionMetadata()
   void maybeRunScheduledBackup()
 }
