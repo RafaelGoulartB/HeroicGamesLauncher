@@ -1,20 +1,29 @@
 .CollectionSettingsDialog {
-  min-width: min(560px, 92vw);
+  min-width: min(800px, 92vw);
 }
 
-.Dialog__content.CollectionSettingsDialog__content {
+.CollectionSettingsDialog__content {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  width: min(640px, 85vw);
-  max-width: 640px;
-  max-height: 70vh;
+  width: min(840px, 90vw);
+  max-width: 840px;
+  height: min(620px, 70vh);
+  max-height: min(620px, 70vh);
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .CollectionSettingsDialog__content * {
   min-width: 0;
+}
+
+/* MUI keeps every TabPanel mounted; the inactive ones render an empty
+   wrapper. Without this they still count as flex items and add extra
+   gaps, so later tabs would end up with more space above their content
+   than earlier ones. */
+.CollectionSettingsDialog__content [role='tabpanel']:empty {
+  display: none;
 }
 
 .CollectionSettingsDialog__content .MuiTabs-root {
@@ -28,7 +37,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  padding-top: var(--space-sm);
 }
 
 .CollectionSettingsDialog__section h4 {
