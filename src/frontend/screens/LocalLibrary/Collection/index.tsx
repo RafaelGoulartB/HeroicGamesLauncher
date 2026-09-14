@@ -165,6 +165,30 @@ function lastPlayedAt(appName: string): string {
   return timestampStore.get_nodefault(appName)?.lastPlayed ?? ''
 }
 
+function sameIdSet(left: Set<string>, right: Set<string>) {
+  if (left.size !== right.size) return false
+  for (const id of left) {
+    if (!right.has(id)) return false
+  }
+  return true
+}
+
+function readStuckGroupIds(root: HTMLElement) {
+  const rootTop = root.getBoundingClientRect().top
+  const next = new Set<string>()
+  root.querySelectorAll<HTMLElement>('.collection__group').forEach((group) => {
+    const id = group.dataset.groupId
+    const toggle = group.querySelector<HTMLElement>('.collection__groupToggle')
+    if (!id || !toggle) return
+    const groupTop = group.getBoundingClientRect().top
+    const toggleTop = toggle.getBoundingClientRect().top
+    if (groupTop < rootTop - 2 && toggleTop <= rootTop + 1) {
+      next.add(id)
+    }
+  })
+  return next
+}
+
 export default function Collection() {
   const { t } = useTranslation()
   const { epic, gog, amazon, zoom, sideloadedLibrary, allTilesInColor } =
@@ -180,6 +204,7 @@ export default function Collection() {
   const [groupByStatus, setGroupByStatus] = useState(true)
   const [collapsedGroups, setCollapsedGroups] =
     useState<Set<string>>(readCollapsedGroups)
+  const [stuckGroups, setStuckGroups] = useState<Set<string>>(() => new Set())
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [greyUninstalledGames, setGreyUninstalledGames] = useState(true)
   const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden)
@@ -481,6 +506,43 @@ export default function Collection() {
   ])
 
   useEffect(() => {
+    if (!groupByStatus) {
+      setStuckGroups((current) => (current.size ? new Set() : current))
+      return
+    }
+    const root = listRef.current
+    if (!root) return
+
+    let frame = 0
+    const update = () => {
+      const next = readStuckGroupIds(root)
+      setStuckGroups((current) => (sameIdSet(current, next) ? current : next))
+    }
+    const onScroll = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        update()
+      })
+    }
+
+    root.addEventListener('scroll', onScroll, { passive: true })
+    update()
+    return () => {
+      root.removeEventListener('scroll', onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [
+    filtered,
+    groupByStatus,
+    statuses,
+    metas,
+    sort,
+    collapsedGroups,
+    facetFilters
+  ])
+
+  useEffect(() => {
     if (!focusedKey) return
     const timer = window.setTimeout(() => {
       listRef.current
@@ -659,13 +721,16 @@ export default function Collection() {
               return (
                 <section
                   key={status.id}
+                  data-group-id={status.id}
                   className={classNames('collection__group', {
                     'is-collapsed': collapsedGroups.has(status.id)
                   })}
                 >
                   <button
                     type="button"
-                    className="collection__groupToggle"
+                    className={classNames('collection__groupToggle', {
+                      'is-stuck': stuckGroups.has(status.id)
+                    })}
                     aria-expanded={!collapsedGroups.has(status.id)}
                     onClick={() => toggleGroup(status.id)}
                   >
@@ -687,13 +752,16 @@ export default function Collection() {
           )}
           {groupByStatus && grouped.unknown.length > 0 && (
             <section
+              data-group-id={UNKNOWN_GROUP_ID}
               className={classNames('collection__group', {
                 'is-collapsed': collapsedGroups.has(UNKNOWN_GROUP_ID)
               })}
             >
               <button
                 type="button"
-                className="collection__groupToggle"
+                className={classNames('collection__groupToggle', {
+                  'is-stuck': stuckGroups.has(UNKNOWN_GROUP_ID)
+                })}
                 aria-expanded={!collapsedGroups.has(UNKNOWN_GROUP_ID)}
                 onClick={() => toggleGroup(UNKNOWN_GROUP_ID)}
               >
