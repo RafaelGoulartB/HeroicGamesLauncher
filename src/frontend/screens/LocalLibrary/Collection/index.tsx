@@ -464,6 +464,14 @@ export default function Collection() {
           setFocusedKey(key)
         }}
         onStatusChange={(statusId) => handleStatusChange(game, statusId)}
+        onRemoved={() => {
+          void reload()
+          setFocusedKey((current) => {
+            if (current !== gameKey(game)) return current
+            storage.removeItem(FOCUSED_GAME_KEY)
+            return null
+          })
+        }}
       />
     ))
   }

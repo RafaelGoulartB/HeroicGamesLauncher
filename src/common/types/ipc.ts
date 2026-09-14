@@ -364,6 +364,14 @@ interface AsyncIPCFunctions {
   ) => Promise<CollectionMetadataBulkProgress>
   getCollectionMetadataBulkStatus: () => Promise<CollectionMetadataBulkProgress>
   cancelCollectionMetadataBulk: () => Promise<CollectionMetadataBulkProgress>
+  forceClearLocalPlaying: (args: {
+    appName: string
+    runner: Runner
+  }) => Promise<void>
+  removeCollectionGame: (args: {
+    appName: string
+    runner: Runner
+  }) => Promise<{ ok: boolean; error?: string }>
   launch: (args: LaunchParams) => StatusPromise
   openDialog: (args: OpenDialogOptions) => Promise<string | false>
   install: (args: InstallParams) => Promise<void>

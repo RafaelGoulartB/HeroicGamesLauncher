@@ -34,6 +34,12 @@ export function upsertGameMetadata(metadata: CollectionGameMetadata) {
   return metadata
 }
 
+export function deleteGameMetadata(runner: string, appName: string) {
+  const games = { ...metadataFile.get('games') }
+  delete games[metadataKey(runner, appName)]
+  metadataFile.set('games', games)
+}
+
 export function currentOrBlank(
   runner: string,
   appName: string

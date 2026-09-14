@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, writeFileSync, copyFileSync } from 'graceful-fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync
+} from 'graceful-fs'
 import { extname, join } from 'path'
 import { app } from 'electron'
 import axios from 'axios'
@@ -14,6 +20,19 @@ function folderName(runner: string, appName: string) {
 
 function metadataArtRoot() {
   return join(app.getPath('userData'), 'local_library', 'metadata-art')
+}
+
+export function removeMetadataArt(runner: string, appName: string) {
+  const dir = join(metadataArtRoot(), folderName(runner, appName))
+  if (!existsSync(dir)) return
+  try {
+    rmSync(dir, { recursive: true, force: true })
+  } catch (error) {
+    logWarning(
+      `Could not remove metadata art ${dir}: ${String(error)}`,
+      LogPrefix.Backend
+    )
+  }
 }
 
 function sniffImageExt(bytes: Buffer): string | undefined {

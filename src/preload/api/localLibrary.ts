@@ -39,5 +39,7 @@ export const localLibrary = {
   startMetadataBulk: makeHandlerInvoker('startCollectionMetadataBulk'),
   getMetadataBulkStatus: makeHandlerInvoker('getCollectionMetadataBulkStatus'),
   cancelMetadataBulk: makeHandlerInvoker('cancelCollectionMetadataBulk'),
-  onMetadataBulkProgress: frontendListenerSlot('collectionMetadataBulkProgress')
+  onMetadataBulkProgress: frontendListenerSlot('collectionMetadataBulkProgress'),
+  forceClearPlaying: makeHandlerInvoker('forceClearLocalPlaying'),
+  removeGame: makeHandlerInvoker('removeCollectionGame')
 }

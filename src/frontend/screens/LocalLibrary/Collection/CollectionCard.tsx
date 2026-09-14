@@ -61,6 +61,7 @@ import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
 import CollectionContextMenu from './CollectionContextMenu'
 import CollectionMetadataDialog from './CollectionMetadataDialog'
+import { confirmForceStopPlaying } from './forceStopPlaying'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import { collectionCoverSrc } from './steamArt'
 import './CollectionCard.css'
@@ -78,6 +79,7 @@ type Props = {
   onSelect: () => void
   onStatusChange: (statusId: string) => void
   onMetadataChange: (metadata: CollectionGameMetadata) => void
+  onRemoved?: () => void
 }
 
 export default function CollectionCard({
@@ -90,7 +92,8 @@ export default function CollectionCard({
   isFocused = false,
   onSelect,
   onStatusChange,
-  onMetadataChange
+  onMetadataChange,
+  onRemoved
 }: Props) {
   const { t } = useTranslation('gamepage')
   const navigate = useNavigate()
@@ -99,7 +102,8 @@ export default function CollectionCard({
     favouriteGames,
     showDialogModal,
     connectivity,
-    gameUpdates
+    gameUpdates,
+    refreshLibrary
   } = useContext(ContextProvider)
   const { openGameSettingsModal, openGameLogsModal, openGameCategoriesModal } =
     useGlobalState.keys(
@@ -247,6 +251,66 @@ export default function CollectionCard({
     setShowUninstallModal(true)
   }
 
+  function handleRemoveFromCollection() {
+    const removeGame = window.api.localLibrary.removeGame
+    if (typeof removeGame !== 'function') {
+      showDialogModal({
+        showDialog: true,
+        type: 'ERROR',
+        title: t('collection.remove.title', 'Remove from Collection'),
+        message: t(
+          'collection.remove.restart',
+          'Restart Heroic Local to load Remove from Collection.'
+        )
+      })
+      return
+    }
+
+    showDialogModal({
+      showDialog: true,
+      type: 'MESSAGE',
+      title: t('collection.remove.title', 'Remove from Collection'),
+      message: t(
+        'collection.remove.confirm',
+        'Remove {{title}} from Collection? This does not uninstall the game. Playtime, status, and Collection images for it are deleted.',
+        { title }
+      ),
+      buttons: [
+        {
+          text: t('box.yes'),
+          onClick: () => {
+            void (async () => {
+              const result = await removeGame({ appName, runner })
+              if (!result.ok) {
+                showDialogModal({
+                  showDialog: true,
+                  type: 'ERROR',
+                  title: t('collection.remove.title', 'Remove from Collection'),
+                  message:
+                    result.error ||
+                    t(
+                      'collection.remove.failed',
+                      'Could not remove this game from Collection.'
+                    )
+                })
+                return
+              }
+              hiddenGames.remove(appName)
+              favouriteGames.remove(appName)
+              timestampStore.delete(appName)
+              await refreshLibrary({
+                library: 'sideload',
+                runInBackground: true
+              })
+              onRemoved?.()
+            })()
+          }
+        },
+        { text: t('box.no') }
+      ]
+    })
+  }
+
   async function handleLudusaviBackup() {
     const backup = window.api.localLibrary.runLudusaviBackup
     if (typeof backup !== 'function') {
@@ -381,8 +445,19 @@ export default function CollectionCard({
       })
     }
 
-    if (isPlaying || isUpdating) {
+    if (isUpdating) {
       return sendKill(appName, playRunner)
+    }
+
+    if (isPlaying) {
+      confirmForceStopPlaying({
+        appName,
+        runner: playRunner,
+        title,
+        t,
+        showDialogModal
+      })
+      return
     }
 
     if (isQueued) {
@@ -630,6 +705,12 @@ export default function CollectionCard({
             label: t('button.uninstall'),
             onclick: handleUninstall,
             show: isInstalled && !isUpdating && !isPlaying,
+            icon: <DeleteForever />
+          },
+          {
+            label: t('collection.remove.title', 'Remove from Collection'),
+            onclick: handleRemoveFromCollection,
+            show: isSideloaded && !isPlaying && !isUpdating,
             icon: <DeleteForever />
           }
         ]}

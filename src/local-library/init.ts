@@ -18,6 +18,8 @@ import {
 } from './art'
 import { searchCollectionWebImages } from './web-images'
 import { cacheSteamHero, warmSteamHeroes } from './heroes'
+import { forceClearLocalPlaying } from './playtime-watch'
+import { removeCollectionGame } from './remove'
 import { getSteamAppDetails } from './steam-details'
 import { initLocalArtProtocol } from './protocol'
 import { maybeRunScheduledBackup, runCollectionBackup } from './backup'
@@ -152,6 +154,10 @@ export function registerLocalLibraryIpc() {
   )
   addHandler('getCollectionMetadataBulkStatus', () => getBulkMetadataProgress())
   addHandler('cancelCollectionMetadataBulk', () => cancelBulkMetadata())
+  addHandler('forceClearLocalPlaying', (_e, args) =>
+    forceClearLocalPlaying(args.appName, args.runner)
+  )
+  addHandler('removeCollectionGame', (_e, args) => removeCollectionGame(args))
 }
 
 export async function initLocalLibrary() {

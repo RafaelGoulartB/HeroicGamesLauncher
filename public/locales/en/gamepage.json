@@ -133,6 +133,12 @@
             "title": "Collection metadata"
         },
         "notPlayed": "Not Played",
+        "remove": {
+            "confirm": "Remove {{title}} from Collection? This does not uninstall the game. Playtime, status, and Collection images for it are deleted.",
+            "failed": "Could not remove this game from Collection.",
+            "restart": "Restart Heroic Local to load Remove from Collection.",
+            "title": "Remove from Collection"
+        },
         "sort": {
             "playtime": "Playtime"
         },

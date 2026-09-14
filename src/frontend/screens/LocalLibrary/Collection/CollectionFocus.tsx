@@ -39,6 +39,7 @@ import { getCardStatus } from 'frontend/screens/Library/components/GameCard/cons
 import fallBackImage from 'frontend/assets/heroic_card.jpg'
 import { formatPlaytimeMinutes } from './playtime'
 import { STATUS_COLORS } from './statusColors'
+import { confirmForceStopPlaying } from './forceStopPlaying'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import { collectionCoverSrc, collectionStageArt } from './steamArt'
 import { sanitizeSteamDescription } from './steamHtml'
@@ -411,8 +412,19 @@ function CollectionFocusPanel({
         showDialogModal
       })
     }
-    if (isPlaying || isUpdating) {
+    if (isUpdating) {
       return sendKill(appName, runner)
+    }
+
+    if (isPlaying) {
+      confirmForceStopPlaying({
+        appName,
+        runner,
+        title,
+        t: tGame,
+        showDialogModal
+      })
+      return
     }
     if (isQueued) {
       return window.api.removeFromDMQueue(appName)

@@ -312,6 +312,10 @@
             }
         },
         "newStatus": "New status",
+        "playing": {
+            "forceStop": "{{title}} still looks like it is running. Mark it as not playing anyway? Playtime tracking will stop even if the game stays open.",
+            "forceStopTitle": "Mark as not playing?"
+        },
         "playnite": {
             "export": "Export for Playnite…",
             "exportDone_one": "Exported {{count}} games to {{path}}. Copy this file to Windows when you want Playnite to pick up Heroic playtime and status.",

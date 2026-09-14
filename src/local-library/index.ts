@@ -12,4 +12,6 @@ export {
   tryLaunchLocalGame,
   tryStopLocalGame
 } from './steam'
+export { forceClearLocalPlaying } from './playtime-watch'
+export { removeCollectionGame } from './remove'
 export { getLocalGameMeta, getLocalSessions } from './stores'

@@ -14,23 +14,23 @@ The Local "store" is the existing `sideload` runner (UI label: Local).
 
 ## Upstream hooks (keep these diffs small when merging)
 
-| File                                                              | Change                                                                                                                                      |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/common/types/ipc.ts`                                         | IPC methods for Playnite, Steam URI, Collection backup, Steam details, Collection art / web image search, Collection metadata bulk progress |
-| `src/backend/storeManagers/sideload/library.ts`                   | `init()` / `refresh()` → local install state                                                                                                |
-| `src/backend/storeManagers/sideload/games.ts`                     | Steam URI launch, wait for game, stop PID                                                                                                   |
-| `src/backend/launcher.ts`                                         | `recordLocalSession()` / Ludusavi backup after play                                                                                         |
-| `src/preload/api/index.ts`                                        | export `localLibrary`                                                                                                                       |
-| `src/frontend/screens/Game/GamePage/index.tsx`                    | session history next to TimeContainer                                                                                                       |
-| `src/frontend/screens/Library/components/LibraryHeader/index.css` | spacing for the Collection/Library split                                                                                                    |
-| `src/frontend/components/UI/LibraryFilters/index.tsx`             | "Other" → "Local"                                                                                                                           |
-| `electron.vite.config.ts`                                         | alias `local-library`                                                                                                                       |
-| `src/backend/main.ts`                                             | `registerLocalArtScheme()` / `initLocalArtProtocol()` next to image cache                                                                   |
-| `src/frontend/App.tsx`                                            | Collection is index `/`; Library at `/library`                                                                                              |
-| `src/frontend/components/UI/Sidebar/components/SidebarLinks/`     | Collection is home; Library at `/library`                                                                                                   |
-| `src/frontend/components/UI/Sidebar/components/SidebarItem/`      | `end` so `/` does not stay active everywhere                                                                                                |
-| `public/locales/en/gamepage.json`                                 | Collection, session, Steam, and Ludusavi translations                                                                                       |
-| `public/locales/en/translation.json`                              | Collection, Playnite, Local import, backup, art, and status translations                                                                    |
+| File                                                              | Change                                                                                                                                                                                   |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/common/types/ipc.ts`                                         | IPC methods for Playnite, Steam URI, Collection backup, Steam details, Collection art / web image search, Collection metadata bulk progress, force-clear playing, remove from Collection |
+| `src/backend/storeManagers/sideload/library.ts`                   | `init()` / `refresh()` → local install state                                                                                                                                             |
+| `src/backend/storeManagers/sideload/games.ts`                     | Steam URI launch, wait for game, stop PID                                                                                                                                                |
+| `src/backend/launcher.ts`                                         | `recordLocalSession()` / Ludusavi backup after play                                                                                                                                      |
+| `src/preload/api/index.ts`                                        | export `localLibrary`                                                                                                                                                                    |
+| `src/frontend/screens/Game/GamePage/index.tsx`                    | session history next to TimeContainer                                                                                                                                                    |
+| `src/frontend/screens/Library/components/LibraryHeader/index.css` | spacing for the Collection/Library split                                                                                                                                                 |
+| `src/frontend/components/UI/LibraryFilters/index.tsx`             | "Other" → "Local"                                                                                                                                                                        |
+| `electron.vite.config.ts`                                         | alias `local-library`                                                                                                                                                                    |
+| `src/backend/main.ts`                                             | `registerLocalArtScheme()` / `initLocalArtProtocol()` next to image cache                                                                                                                |
+| `src/frontend/App.tsx`                                            | Collection is index `/`; Library at `/library`                                                                                                                                           |
+| `src/frontend/components/UI/Sidebar/components/SidebarLinks/`     | Collection is home; Library at `/library`                                                                                                                                                |
+| `src/frontend/components/UI/Sidebar/components/SidebarItem/`      | `end` so `/` does not stay active everywhere                                                                                                                                             |
+| `public/locales/en/gamepage.json`                                 | Collection, session, Steam, and Ludusavi translations                                                                                                                                    |
+| `public/locales/en/translation.json`                              | Collection, Playnite, Local import, backup, art, and status translations                                                                                                                 |
 
 Sidecar data lives in Electron stores `local_library/library` and
 `local_library/sessions`, not in `GameInfo`. Steam Collection heroes are
@@ -46,6 +46,13 @@ Collection Install/Uninstall for Steam titles (`launchKind: steam-uri`)
 opens the Steam client (`steam://install/<id>` / `steam://uninstall/<id>`)
 from overlay code. Official Library, UninstallModal, and sideload uninstall
 are unchanged.
+
+Clicking play again on a Collection game that still shows as playing asks
+for confirmation, then force-clears the playing status even if the process
+is still detected. The game itself is not killed.
+
+Right-click → Remove from Collection deletes a Local (sideload) game from
+the overlay list. Steam/Epic installs are not uninstalled.
 
 Collection settings (gear on the Collection header) store appearance (grey
 uninstalled covers, cover aspect), backup folder, schedule, Ludusavi options,
