@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -17,8 +18,10 @@ import {
 import {
   PathSelectionBox,
   SelectField,
+  TabPanel,
   TextInputField,
-  ToggleSwitch
+  ToggleSwitch,
+  WarningMessage
 } from 'frontend/components/UI'
 import {
   Dialog,
@@ -26,7 +29,7 @@ import {
   DialogFooter,
   DialogHeader
 } from 'frontend/components/UI/Dialog'
-import { MenuItem } from '@mui/material'
+import { MenuItem, Tab, Tabs } from '@mui/material'
 import './CollectionSettingsDialog.css'
 
 type Props = {
@@ -34,6 +37,8 @@ type Props = {
   onSettingsChange?: (settings: CollectionSettings) => void
   onOpenMetadataWizard?: () => void
 }
+
+type SettingsTab = 'appearance' | 'metadata' | 'backup' | 'saves'
 
 function formatBackupTime(value?: string) {
   if (!value) return ''
@@ -67,6 +72,7 @@ export default function CollectionSettingsDialog({
   onOpenMetadataWizard
 }: Props) {
   const { t } = useTranslation()
+  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
   const [settings, setSettings] = useState<CollectionSettings | null>(null)
   const [folder, setFolder] = useState('')
   const [interval, setInterval] = useState<CollectionBackupInterval>('weekly')
@@ -287,6 +293,10 @@ export default function CollectionSettingsDialog({
   const detected = settings?.ludusaviDetected
   const overridesLocked = useInstalledConfig && Boolean(detected?.configPath)
 
+  function handleTabChange(_event: SyntheticEvent, next: SettingsTab) {
+    setActiveTab(next)
+  }
+
   return (
     <Dialog
       onClose={onClose}
@@ -297,382 +307,451 @@ export default function CollectionSettingsDialog({
         {t('collection.settings.title', 'Collection settings')}
       </DialogHeader>
       <DialogContent className="CollectionSettingsDialog__content">
-        <section className="CollectionSettingsDialog__section">
-          <h4>{t('collection.settings.appearance', 'Appearance')}</h4>
-          <ToggleSwitch
-            htmlId="collection-grey-uninstalled"
-            value={greyUninstalledGames}
-            disabled={saving}
-            handleChange={() => {
-              const next = !greyUninstalledGames
-              setGreyUninstalledGames(next)
-              void persistUi(next)
-            }}
-            title={t(
-              'collection.settings.greyUninstalled',
-              'Fade uninstalled games'
-            )}
-          />
-          <p className="CollectionSettingsDialog__meta">
-            {t(
-              'collection.settings.greyUninstalledHelp',
-              'Uninstalled covers appear grey. Turn this off to keep their original colour.'
-            )}
-          </p>
-        </section>
-
-        <section className="CollectionSettingsDialog__section">
-          <h4>{t('collection.metadata.settings', 'Metadata')}</h4>
-          <p>
-            {t(
-              'collection.metadata.settingsHelp',
-              'Collection uses IGDB first, then Steam, store pages, Lutris, and Playnite files. Create a Twitch app to get IGDB keys: https://dev.twitch.tv/console'
-            )}
-          </p>
-          <TextInputField
-            htmlId="collection-igdb-id"
-            label={t('collection.metadata.clientId', 'Twitch / IGDB Client ID')}
-            value={igdbClientId}
-            onChange={setIgdbClientId}
-            onBlur={() => void persistMetadata({ igdbClientId })}
-          />
-          <TextInputField
-            htmlId="collection-igdb-secret"
-            type="password"
-            label={t(
-              'collection.metadata.clientSecret',
-              'Twitch / IGDB Client Secret'
-            )}
-            value={igdbClientSecret}
-            onChange={setIgdbClientSecret}
-            onBlur={() => void persistMetadata({ igdbClientSecret })}
-          />
-          <div className="CollectionSettingsDialog__actions">
-            <button
-              type="button"
-              className="button outline"
-              disabled={saving}
-              onClick={() => void handleTestIgdb()}
-            >
-              {t('collection.metadata.testIgdb', 'Test IGDB')}
-            </button>
-            <button
-              type="button"
-              className="button is-primary"
-              disabled={saving}
-              onClick={() => onOpenMetadataWizard?.()}
-            >
-              {t('collection.metadata.wizard.open', 'Download metadata…')}
-            </button>
-          </div>
-          {igdbTest && (
-            <p className="CollectionSettingsDialog__ok">{igdbTest}</p>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          aria-label={t(
+            'collection.settings.tabsLabel',
+            'Collection settings tabs'
           )}
-          <SelectField
-            htmlId="collection-cover-aspect"
-            label={t('collection.metadata.coverAspect', 'Cover aspect')}
-            value={coverAspect}
-            disabled={saving}
-            onChange={(event) => {
-              const next = event.target.value as CoverAspectPreset
-              setCoverAspect(next)
-              void persistMetadata({ coverAspect: next })
-            }}
-          >
-            <MenuItem value="steam">Steam (2:3)</MenuItem>
-            <MenuItem value="igdb">IGDB (3:4)</MenuItem>
-            <MenuItem value="gog">GOG</MenuItem>
-            <MenuItem value="square">
-              {t('collection.metadata.square', 'Square')}
-            </MenuItem>
-            <MenuItem value="dvd">DVD (5:7)</MenuItem>
-            <MenuItem value="banner">Banner (16:9)</MenuItem>
-          </SelectField>
-          <ToggleSwitch
-            htmlId="collection-metadata-autofill"
-            value={autoFillMissing}
-            disabled={saving}
-            handleChange={() => {
-              const next = !autoFillMissing
-              setAutoFillMissing(next)
-              void persistMetadata({ autoFillMissing: next })
-            }}
-            title={t(
-              'collection.metadata.autoFill',
-              'Fill missing metadata in the background'
-            )}
+          variant="scrollable"
+        >
+          <Tab
+            label={t('collection.settings.tab.appearance', 'Appearance')}
+            value="appearance"
           />
-          <ToggleSwitch
-            htmlId="collection-metadata-download"
-            value={downloadImages}
-            disabled={saving}
-            handleChange={() => {
-              const next = !downloadImages
-              setDownloadImages(next)
-              void persistMetadata({ downloadImages: next })
-            }}
-            title={t(
-              'collection.metadata.downloadImages',
-              'Copy covers to disk (default keeps CDN URLs)'
-            )}
+          <Tab
+            label={t('collection.settings.tab.metadata', 'Metadata')}
+            value="metadata"
           />
-          <p className="CollectionSettingsDialog__meta">
-            {t(
-              'collection.metadata.priorityHelp',
-              'Preferred source per field. Other sources still fill empty values.'
-            )}
-          </p>
-          <div className="CollectionSettingsDialog__priority">
-            {METADATA_FIELDS.map((field) => (
-              <SelectField
-                key={field}
-                htmlId={`collection-priority-${field}`}
-                label={t(
-                  `collection.metadata.field.${field}`,
-                  FIELD_LABELS[field]
-                )}
-                value={preferredSource(field)}
+          <Tab
+            label={t('collection.settings.tab.backup', 'Backup')}
+            value="backup"
+          />
+          <Tab
+            label={t('collection.settings.tab.saves', 'Save backup')}
+            value="saves"
+          />
+        </Tabs>
+
+        <TabPanel value={activeTab} index="appearance">
+          <section className="CollectionSettingsDialog__section">
+            <ToggleSwitch
+              htmlId="collection-grey-uninstalled"
+              value={greyUninstalledGames}
+              disabled={saving}
+              handleChange={() => {
+                const next = !greyUninstalledGames
+                setGreyUninstalledGames(next)
+                void persistUi(next)
+              }}
+              title={t(
+                'collection.settings.greyUninstalled',
+                'Fade uninstalled games'
+              )}
+            />
+            <p className="CollectionSettingsDialog__meta">
+              {t(
+                'collection.settings.greyUninstalledHelp',
+                'Uninstalled covers appear grey. Turn this off to keep their original colour.'
+              )}
+            </p>
+          </section>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index="metadata">
+          <section className="CollectionSettingsDialog__section">
+            <p>
+              {t(
+                'collection.metadata.settingsHelp',
+                'Collection uses IGDB first, then Steam, store pages, Lutris, and Playnite files. Create a Twitch app to get IGDB keys: https://dev.twitch.tv/console'
+              )}
+            </p>
+
+            <h5 className="CollectionSettingsDialog__subheading">
+              {t('collection.metadata.igdbHeading', 'Twitch / IGDB API')}
+            </h5>
+            <TextInputField
+              htmlId="collection-igdb-id"
+              label={t(
+                'collection.metadata.clientId',
+                'Twitch / IGDB Client ID'
+              )}
+              value={igdbClientId}
+              onChange={setIgdbClientId}
+              onBlur={() => void persistMetadata({ igdbClientId })}
+            />
+            <TextInputField
+              htmlId="collection-igdb-secret"
+              type="password"
+              label={t(
+                'collection.metadata.clientSecret',
+                'Twitch / IGDB Client Secret'
+              )}
+              value={igdbClientSecret}
+              onChange={setIgdbClientSecret}
+              onBlur={() => void persistMetadata({ igdbClientSecret })}
+            />
+            <div className="CollectionSettingsDialog__actions">
+              <button
+                type="button"
+                className="button outline"
                 disabled={saving}
-                onChange={(event) =>
-                  handlePreferredSource(field, event.target.value)
-                }
+                onClick={() => void handleTestIgdb()}
               >
-                <MenuItem value="auto">
-                  {t('collection.metadata.auto', 'Auto (IGDB first)')}
+                {t('collection.metadata.testIgdb', 'Test IGDB')}
+              </button>
+              <button
+                type="button"
+                className="button is-primary"
+                disabled={saving}
+                onClick={() => onOpenMetadataWizard?.()}
+              >
+                {t('collection.metadata.wizard.open', 'Download metadata…')}
+              </button>
+            </div>
+            {igdbTest && (
+              <p className="CollectionSettingsDialog__ok">{igdbTest}</p>
+            )}
+
+            <h5 className="CollectionSettingsDialog__subheading">
+              {t('collection.metadata.imagesHeading', 'Images & fields')}
+            </h5>
+            <SelectField
+              htmlId="collection-cover-aspect"
+              label={t('collection.metadata.coverAspect', 'Cover aspect')}
+              value={coverAspect}
+              disabled={saving}
+              onChange={(event) => {
+                const next = event.target.value as CoverAspectPreset
+                setCoverAspect(next)
+                void persistMetadata({ coverAspect: next })
+              }}
+            >
+              <MenuItem value="steam">Steam (2:3)</MenuItem>
+              <MenuItem value="igdb">IGDB (3:4)</MenuItem>
+              <MenuItem value="gog">GOG</MenuItem>
+              <MenuItem value="square">
+                {t('collection.metadata.square', 'Square')}
+              </MenuItem>
+              <MenuItem value="dvd">DVD (5:7)</MenuItem>
+              <MenuItem value="banner">Banner (16:9)</MenuItem>
+            </SelectField>
+            <ToggleSwitch
+              htmlId="collection-metadata-autofill"
+              value={autoFillMissing}
+              disabled={saving}
+              handleChange={() => {
+                const next = !autoFillMissing
+                setAutoFillMissing(next)
+                void persistMetadata({ autoFillMissing: next })
+              }}
+              title={t(
+                'collection.metadata.autoFill',
+                'Fill missing metadata in the background'
+              )}
+            />
+            <ToggleSwitch
+              htmlId="collection-metadata-download"
+              value={downloadImages}
+              disabled={saving}
+              handleChange={() => {
+                const next = !downloadImages
+                setDownloadImages(next)
+                void persistMetadata({ downloadImages: next })
+              }}
+              title={t(
+                'collection.metadata.downloadImages',
+                'Copy covers to disk (default keeps CDN URLs)'
+              )}
+            />
+
+            <details className="advancedFields">
+              <summary>
+                {t(
+                  'collection.metadata.priorityHeading',
+                  'Field priority (advanced)'
+                )}
+              </summary>
+              <p className="CollectionSettingsDialog__meta">
+                {t(
+                  'collection.metadata.priorityHelp',
+                  'Preferred source per field. Other sources still fill empty values.'
+                )}
+              </p>
+              <div className="CollectionSettingsDialog__priority">
+                {METADATA_FIELDS.map((field) => (
+                  <SelectField
+                    key={field}
+                    htmlId={`collection-priority-${field}`}
+                    label={t(
+                      `collection.metadata.field.${field}`,
+                      FIELD_LABELS[field]
+                    )}
+                    value={preferredSource(field)}
+                    disabled={saving}
+                    onChange={(event) =>
+                      handlePreferredSource(field, event.target.value)
+                    }
+                  >
+                    <MenuItem value="auto">
+                      {t('collection.metadata.auto', 'Auto (IGDB first)')}
+                    </MenuItem>
+                    <MenuItem value="igdb">IGDB</MenuItem>
+                    <MenuItem value="steam">Steam</MenuItem>
+                    <MenuItem value="store">
+                      {t('collection.metadata.store', 'Store')}
+                    </MenuItem>
+                    <MenuItem value="lutris">Lutris</MenuItem>
+                    <MenuItem value="playnite">Playnite</MenuItem>
+                  </SelectField>
+                ))}
+              </div>
+            </details>
+          </section>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index="backup">
+          <section className="CollectionSettingsDialog__section">
+            <p>
+              {t(
+                'collection.settings.backupHelp',
+                'Copies Heroic config (Collection, playtime, statuses, Local games, logins) into the folder below. Installed games are not included. Cache and Wine tools are skipped. A dated folder is created when Heroic Local opens, if the schedule is due.'
+              )}
+            </p>
+            <PathSelectionBox
+              htmlId="collection-backup-folder"
+              type="directory"
+              path={folder}
+              onPathChange={(next) => {
+                setFolder(next)
+                void persist(next, interval)
+              }}
+              label={t('collection.settings.backupFolder', 'Backup folder')}
+              pathDialogTitle={t(
+                'collection.settings.backupFolder',
+                'Backup folder'
+              )}
+            />
+            <SelectField
+              htmlId="collection-backup-interval"
+              label={t('collection.settings.backupInterval', 'How often')}
+              value={interval}
+              disabled={saving || running}
+              onChange={(event) => {
+                const next = event.target.value as CollectionBackupInterval
+                setInterval(next)
+                void persist(folder, next)
+              }}
+            >
+              <MenuItem value="daily">
+                {t('collection.settings.backupDaily', 'Once a day')}
+              </MenuItem>
+              <MenuItem value="weekly">
+                {t('collection.settings.backupWeekly', 'Once a week')}
+              </MenuItem>
+              <MenuItem value="monthly">
+                {t('collection.settings.backupMonthly', 'Once a month')}
+              </MenuItem>
+            </SelectField>
+            <div className="CollectionSettingsDialog__actions">
+              <button
+                type="button"
+                className="button is-primary"
+                disabled={running || saving || !folder.trim()}
+                onClick={() => void handleBackupNow()}
+              >
+                {running
+                  ? t('collection.settings.backupRunning', 'Backing up…')
+                  : t('collection.settings.backupNow', 'Backup now')}
+              </button>
+            </div>
+            <p className="CollectionSettingsDialog__meta">
+              {t('collection.settings.lastBackup', 'Last backup')}: {lastBackup}
+              {settings?.backup.lastBackupPath
+                ? ` · ${settings.backup.lastBackupPath}`
+                : ''}
+            </p>
+            {message && (
+              <p className="CollectionSettingsDialog__ok">{message}</p>
+            )}
+            {settings?.backup.lastError && !message && !error && (
+              <p className="CollectionSettingsDialog__error">
+                {settings.backup.lastError}
+              </p>
+            )}
+          </section>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index="saves">
+          <section className="CollectionSettingsDialog__section">
+            <p>
+              {t(
+                'collection.settings.ludusaviHelp',
+                'When enabled, Heroic Local backs up the game save with Ludusavi after you close a game. Right-click a Collection card to back up that game now.'
+              )}
+            </p>
+            <ToggleSwitch
+              htmlId="collection-ludusavi-enabled"
+              value={ludusaviEnabled}
+              disabled={saving}
+              handleChange={() => {
+                const next = !ludusaviEnabled
+                setLudusaviEnabled(next)
+                void persistLudusavi({ enabled: next })
+              }}
+              title={t(
+                'collection.settings.ludusaviEnabled',
+                'Back up saves when a game closes'
+              )}
+            />
+            {detected ? (
+              <p className="CollectionSettingsDialog__callout">
+                {t(
+                  'collection.settings.ludusaviDetected',
+                  'Found Ludusavi {{version}} at {{binary}}. Backups go to {{path}} ({{format}}{{compression}}).',
+                  {
+                    version: detected.version || '',
+                    binary: detected.binary,
+                    path:
+                      detected.backupPath ||
+                      t('collection.settings.unknown', 'unknown'),
+                    format: detected.format || 'simple',
+                    compression:
+                      detected.format === 'zip' && detected.compression
+                        ? ` / ${detected.compression}`
+                        : ''
+                  }
+                )}
+              </p>
+            ) : (
+              <WarningMessage>
+                {t(
+                  'collection.settings.ludusaviMissing',
+                  'Ludusavi was not found automatically. Set the binary and backup folder below.'
+                )}
+              </WarningMessage>
+            )}
+            <ToggleSwitch
+              htmlId="collection-ludusavi-use-config"
+              value={useInstalledConfig}
+              disabled={saving || !detected?.configPath}
+              handleChange={() => {
+                const next = !useInstalledConfig
+                setUseInstalledConfig(next)
+                void persistLudusavi({ useInstalledConfig: next })
+              }}
+              title={t(
+                'collection.settings.ludusaviUseConfig',
+                'Use installed Ludusavi settings (path, zip, compression)'
+              )}
+            />
+            <details className="advancedFields" open={!overridesLocked}>
+              <summary>
+                {t(
+                  'collection.settings.ludusaviOverridesHeading',
+                  'Backup location & format'
+                )}
+              </summary>
+              <PathSelectionBox
+                htmlId="collection-ludusavi-binary"
+                type="file"
+                path={ludusaviBinary}
+                disabled={saving}
+                onPathChange={(next) => {
+                  setLudusaviBinary(next)
+                  void persistLudusavi({ binaryPath: next })
+                }}
+                label={t(
+                  'collection.settings.ludusaviBinary',
+                  'Ludusavi binary'
+                )}
+                pathDialogTitle={t(
+                  'collection.settings.ludusaviBinary',
+                  'Ludusavi binary'
+                )}
+                placeholder={detected?.binary}
+              />
+              <PathSelectionBox
+                htmlId="collection-ludusavi-folder"
+                type="directory"
+                path={ludusaviFolder}
+                disabled={saving || overridesLocked}
+                onPathChange={(next) => {
+                  setLudusaviFolder(next)
+                  void persistLudusavi({ backupPath: next })
+                }}
+                label={t(
+                  'collection.settings.ludusaviFolder',
+                  'Save backup folder'
+                )}
+                pathDialogTitle={t(
+                  'collection.settings.ludusaviFolder',
+                  'Save backup folder'
+                )}
+                placeholder={detected?.backupPath}
+              />
+              <SelectField
+                htmlId="collection-ludusavi-format"
+                label={t('collection.settings.ludusaviFormat', 'Backup format')}
+                value={ludusaviFormat}
+                disabled={saving || overridesLocked}
+                onChange={(event) => {
+                  const next = event.target.value as LudusaviBackupFormat
+                  setLudusaviFormat(next)
+                  void persistLudusavi({ format: next })
+                }}
+              >
+                <MenuItem value="zip">
+                  {t('collection.settings.ludusaviZip', 'Zip')}
                 </MenuItem>
-                <MenuItem value="igdb">IGDB</MenuItem>
-                <MenuItem value="steam">Steam</MenuItem>
-                <MenuItem value="store">
-                  {t('collection.metadata.store', 'Store')}
+                <MenuItem value="simple">
+                  {t('collection.settings.ludusaviSimple', 'Simple folder')}
                 </MenuItem>
-                <MenuItem value="lutris">Lutris</MenuItem>
-                <MenuItem value="playnite">Playnite</MenuItem>
               </SelectField>
-            ))}
-          </div>
-        </section>
-
-        <section className="CollectionSettingsDialog__section">
-          <h4>{t('collection.settings.backup', 'Backup')}</h4>
-          <p>
-            {t(
-              'collection.settings.backupHelp',
-              'Copies Heroic config (Collection, playtime, statuses, Local games, logins) into the folder below. Installed games are not included. Cache and Wine tools are skipped. A dated folder is created when Heroic Local opens, if the schedule is due.'
-            )}
-          </p>
-          <PathSelectionBox
-            htmlId="collection-backup-folder"
-            type="directory"
-            path={folder}
-            onPathChange={(next) => {
-              setFolder(next)
-              void persist(next, interval)
-            }}
-            label={t('collection.settings.backupFolder', 'Backup folder')}
-            pathDialogTitle={t(
-              'collection.settings.backupFolder',
-              'Backup folder'
-            )}
-          />
-          <SelectField
-            htmlId="collection-backup-interval"
-            label={t('collection.settings.backupInterval', 'How often')}
-            value={interval}
-            disabled={saving || running}
-            onChange={(event) => {
-              const next = event.target.value as CollectionBackupInterval
-              setInterval(next)
-              void persist(folder, next)
-            }}
-          >
-            <MenuItem value="daily">
-              {t('collection.settings.backupDaily', 'Once a day')}
-            </MenuItem>
-            <MenuItem value="weekly">
-              {t('collection.settings.backupWeekly', 'Once a week')}
-            </MenuItem>
-            <MenuItem value="monthly">
-              {t('collection.settings.backupMonthly', 'Once a month')}
-            </MenuItem>
-          </SelectField>
-          <p className="CollectionSettingsDialog__meta">
-            {t('collection.settings.lastBackup', 'Last backup')}: {lastBackup}
-            {settings?.backup.lastBackupPath
-              ? ` · ${settings.backup.lastBackupPath}`
-              : ''}
-          </p>
-        </section>
-
-        <section className="CollectionSettingsDialog__section">
-          <h4>{t('collection.settings.ludusavi', 'Ludusavi save backup')}</h4>
-          <p>
-            {t(
-              'collection.settings.ludusaviHelp',
-              'When enabled, Heroic Local backs up the game save with Ludusavi after you close a game. Right-click a Collection card to back up that game now.'
-            )}
-          </p>
-          <ToggleSwitch
-            htmlId="collection-ludusavi-enabled"
-            value={ludusaviEnabled}
-            disabled={saving}
-            handleChange={() => {
-              const next = !ludusaviEnabled
-              setLudusaviEnabled(next)
-              void persistLudusavi({ enabled: next })
-            }}
-            title={t(
-              'collection.settings.ludusaviEnabled',
-              'Back up saves when a game closes'
-            )}
-          />
-          {detected ? (
+              <SelectField
+                htmlId="collection-ludusavi-compression"
+                label={t(
+                  'collection.settings.ludusaviCompression',
+                  'Zip compression'
+                )}
+                value={ludusaviCompression}
+                disabled={saving || overridesLocked || ludusaviFormat !== 'zip'}
+                onChange={(event) => {
+                  const next = event.target.value as LudusaviCompression
+                  setLudusaviCompression(next)
+                  void persistLudusavi({ compression: next })
+                }}
+              >
+                <MenuItem value="none">
+                  {t('collection.settings.ludusaviNone', 'None')}
+                </MenuItem>
+                <MenuItem value="deflate">Deflate</MenuItem>
+                <MenuItem value="bzip2">Bzip2</MenuItem>
+                <MenuItem value="zstd">Zstd</MenuItem>
+              </SelectField>
+            </details>
             <p className="CollectionSettingsDialog__meta">
-              {t(
-                'collection.settings.ludusaviDetected',
-                'Found Ludusavi {{version}} at {{binary}}. Backups go to {{path}} ({{format}}{{compression}}).',
-                {
-                  version: detected.version || '',
-                  binary: detected.binary,
-                  path:
-                    detected.backupPath ||
-                    t('collection.settings.unknown', 'unknown'),
-                  format: detected.format || 'simple',
-                  compression:
-                    detected.format === 'zip' && detected.compression
-                      ? ` / ${detected.compression}`
-                      : ''
-                }
-              )}
+              {t('collection.settings.lastSaveBackup', 'Last save backup')}:{' '}
+              {lastSaveBackup}
+              {settings?.ludusavi.lastBackupGame
+                ? ` · ${settings.ludusavi.lastBackupGame}`
+                : ''}
+              {settings?.ludusavi.lastBackupPath
+                ? ` · ${settings.ludusavi.lastBackupPath}`
+                : ''}
             </p>
-          ) : (
-            <p className="CollectionSettingsDialog__meta">
-              {t(
-                'collection.settings.ludusaviMissing',
-                'Ludusavi was not found automatically. Set the binary and backup folder below.'
-              )}
-            </p>
-          )}
-          <ToggleSwitch
-            htmlId="collection-ludusavi-use-config"
-            value={useInstalledConfig}
-            disabled={saving || !detected?.configPath}
-            handleChange={() => {
-              const next = !useInstalledConfig
-              setUseInstalledConfig(next)
-              void persistLudusavi({ useInstalledConfig: next })
-            }}
-            title={t(
-              'collection.settings.ludusaviUseConfig',
-              'Use installed Ludusavi settings (path, zip, compression)'
+            {settings?.ludusavi.lastError && !error && (
+              <p className="CollectionSettingsDialog__error">
+                {settings.ludusavi.lastError}
+              </p>
             )}
-          />
-          <PathSelectionBox
-            htmlId="collection-ludusavi-binary"
-            type="file"
-            path={ludusaviBinary}
-            disabled={saving}
-            onPathChange={(next) => {
-              setLudusaviBinary(next)
-              void persistLudusavi({ binaryPath: next })
-            }}
-            label={t('collection.settings.ludusaviBinary', 'Ludusavi binary')}
-            pathDialogTitle={t(
-              'collection.settings.ludusaviBinary',
-              'Ludusavi binary'
-            )}
-            placeholder={detected?.binary}
-          />
-          <PathSelectionBox
-            htmlId="collection-ludusavi-folder"
-            type="directory"
-            path={ludusaviFolder}
-            disabled={saving || overridesLocked}
-            onPathChange={(next) => {
-              setLudusaviFolder(next)
-              void persistLudusavi({ backupPath: next })
-            }}
-            label={t(
-              'collection.settings.ludusaviFolder',
-              'Save backup folder'
-            )}
-            pathDialogTitle={t(
-              'collection.settings.ludusaviFolder',
-              'Save backup folder'
-            )}
-            placeholder={detected?.backupPath}
-          />
-          <SelectField
-            htmlId="collection-ludusavi-format"
-            label={t('collection.settings.ludusaviFormat', 'Backup format')}
-            value={ludusaviFormat}
-            disabled={saving || overridesLocked}
-            onChange={(event) => {
-              const next = event.target.value as LudusaviBackupFormat
-              setLudusaviFormat(next)
-              void persistLudusavi({ format: next })
-            }}
-          >
-            <MenuItem value="zip">
-              {t('collection.settings.ludusaviZip', 'Zip')}
-            </MenuItem>
-            <MenuItem value="simple">
-              {t('collection.settings.ludusaviSimple', 'Simple folder')}
-            </MenuItem>
-          </SelectField>
-          <SelectField
-            htmlId="collection-ludusavi-compression"
-            label={t(
-              'collection.settings.ludusaviCompression',
-              'Zip compression'
-            )}
-            value={ludusaviCompression}
-            disabled={saving || overridesLocked || ludusaviFormat !== 'zip'}
-            onChange={(event) => {
-              const next = event.target.value as LudusaviCompression
-              setLudusaviCompression(next)
-              void persistLudusavi({ compression: next })
-            }}
-          >
-            <MenuItem value="none">
-              {t('collection.settings.ludusaviNone', 'None')}
-            </MenuItem>
-            <MenuItem value="deflate">Deflate</MenuItem>
-            <MenuItem value="bzip2">Bzip2</MenuItem>
-            <MenuItem value="zstd">Zstd</MenuItem>
-          </SelectField>
-          <p className="CollectionSettingsDialog__meta">
-            {t('collection.settings.lastSaveBackup', 'Last save backup')}:{' '}
-            {lastSaveBackup}
-            {settings?.ludusavi.lastBackupGame
-              ? ` · ${settings.ludusavi.lastBackupGame}`
-              : ''}
-            {settings?.ludusavi.lastBackupPath
-              ? ` · ${settings.ludusavi.lastBackupPath}`
-              : ''}
-          </p>
-        </section>
+          </section>
+        </TabPanel>
 
-        {message && <p className="CollectionSettingsDialog__ok">{message}</p>}
-        {(error ||
-          (!message &&
-            (settings?.backup.lastError || settings?.ludusavi.lastError))) && (
-          <p className="CollectionSettingsDialog__error">
-            {error ||
-              settings?.backup.lastError ||
-              settings?.ludusavi.lastError}
-          </p>
-        )}
+        {error && <p className="CollectionSettingsDialog__error">{error}</p>}
       </DialogContent>
       <DialogFooter>
-        <button
-          className="button is-primary"
-          disabled={running || saving || !folder.trim()}
-          onClick={() => void handleBackupNow()}
-        >
-          {running
-            ? t('collection.settings.backupRunning', 'Backing up…')
-            : t('collection.settings.backupNow', 'Backup now')}
-        </button>
         <button className="button outline" onClick={onClose}>
           {t('box.close', 'Close')}
         </button>
