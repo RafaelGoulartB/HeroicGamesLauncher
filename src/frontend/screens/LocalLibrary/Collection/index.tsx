@@ -191,8 +191,15 @@ function readStuckGroupIds(root: HTMLElement) {
 
 export default function Collection() {
   const { t } = useTranslation()
-  const { epic, gog, amazon, zoom, sideloadedLibrary, allTilesInColor } =
-    useContext(ContextProvider)
+  const {
+    epic,
+    gog,
+    amazon,
+    zoom,
+    sideloadedLibrary,
+    allTilesInColor,
+    hiddenGames
+  } = useContext(ContextProvider)
   const [search, setSearch] = useState('')
   const [installFilter, setInstallFilter] =
     useState<InstallFilter>(readInstallFilter)
@@ -343,10 +350,12 @@ export default function Collection() {
       ...amazon.library,
       ...zoom.library
     ]
+    const hiddenAppNames = new Set(hiddenGames.list.map((game) => game.appName))
     const seen = new Set<string>()
     const unique: GameInfo[] = []
     for (const game of all) {
       if (game.install?.is_dlc) continue
+      if (hiddenAppNames.has(game.app_name)) continue
       const key = `${game.runner}_${game.app_name}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -358,7 +367,8 @@ export default function Collection() {
     epic.library,
     gog.library,
     amazon.library,
-    zoom.library
+    zoom.library,
+    hiddenGames.list
   ])
 
   const filtered = useMemo(() => {
