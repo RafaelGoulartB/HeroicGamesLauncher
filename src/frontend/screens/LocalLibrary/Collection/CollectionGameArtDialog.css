@@ -1,13 +1,21 @@
 .CollectionGameArtDialog {
-  min-width: min(640px, 92vw);
+  min-width: min(800px, 92vw);
 }
 
 .CollectionGameArtDialog__content {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  max-height: 74vh;
-  overflow: auto;
+  width: min(840px, 90vw);
+  max-width: 840px;
+  height: min(620px, 70vh);
+  max-height: min(620px, 70vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.CollectionGameArtDialog__content * {
+  min-width: 0;
 }
 
 .CollectionGameArtDialog__help,
