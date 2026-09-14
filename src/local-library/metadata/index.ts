@@ -10,4 +10,5 @@ export {
   seedPlayniteMetadata,
   startBulkMetadata
 } from './fetch'
+export { updateCollectionGameDetails } from './edit'
 export { testIgdbCredentials, igdbConfigured } from './igdb'

@@ -335,11 +335,36 @@ export interface CollectionGameMetadata {
   features: string[]
   criticScore?: number
   websites: string[]
+  notes?: string
   coverUrl?: string
   heroUrl?: string
   fieldSources: Partial<Record<MetadataField, MetadataSourceId>>
   fetchedAt?: string
   fetchError?: string
+}
+
+export interface CollectionGameDetailsPatch {
+  appName: string
+  runner: string
+  title?: string
+  notes?: string
+  description?: string
+  releaseDate?: string
+  developers?: string[]
+  publishers?: string[]
+  genres?: string[]
+  themes?: string[]
+  gameModes?: string[]
+  platforms?: string[]
+  series?: string
+  features?: string[]
+  criticScore?: number | null
+  websites?: string[]
+}
+
+export interface CollectionGameDetailsResult {
+  metadata: CollectionGameMetadata
+  meta?: LocalGameMeta
 }
 
 export interface CollectionMetadataCandidate {
@@ -365,6 +390,7 @@ export interface CollectionMetadataApplyArgs {
   source?: MetadataSourceId | 'auto'
   fieldPicks?: Partial<Record<MetadataField, MetadataSourceId | 'keep'>>
   overwriteExisting?: boolean
+  preserveManual?: boolean
   downloadImages?: boolean
   igdbId?: number
   lutrisSlug?: string
@@ -388,6 +414,7 @@ export interface CollectionMetadataBulkItem {
 export interface CollectionMetadataBulkArgs {
   games: CollectionMetadataBulkItem[]
   overwriteExisting?: boolean
+  preserveManual?: boolean
   downloadImages?: boolean
 }
 

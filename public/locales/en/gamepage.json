@@ -112,8 +112,8 @@
             "overview": "Overview",
             "tags": "Tags"
         },
-        "gameArt": {
-            "title": "Game images"
+        "gameConfig": {
+            "title": "Game settings"
         },
         "ludusavi": {
             "backup": "Backup save (Ludusavi)",

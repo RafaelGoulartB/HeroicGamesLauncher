@@ -28,6 +28,7 @@ export default function CollectionMetadataWizard({
 }: Props) {
   const { t } = useTranslation()
   const [skipExisting, setSkipExisting] = useState(true)
+  const [keepManual, setKeepManual] = useState(true)
   const [downloadImages, setDownloadImages] = useState(false)
   const running =
     progress.state === 'running' || progress.state === 'cancelling'
@@ -47,6 +48,7 @@ export default function CollectionMetadataWizard({
     const next = await window.api.localLibrary.startMetadataBulk({
       games,
       overwriteExisting: !skipExisting,
+      preserveManual: keepManual,
       downloadImages
     })
     onProgress(next)
@@ -110,6 +112,21 @@ export default function CollectionMetadataWizard({
                 'Skip games that already have metadata'
               )}
             />
+            <ToggleSwitch
+              htmlId="metadata-keep-manual"
+              value={keepManual}
+              handleChange={() => setKeepManual((value) => !value)}
+              title={t(
+                'collection.metadata.wizard.keepManual',
+                'Keep fields edited by hand'
+              )}
+            />
+            <p className="CollectionMetadataWizard__hint">
+              {t(
+                'collection.metadata.wizard.keepManualHelp',
+                'Name, notes, and any field you changed in Game settings stay as they are. Other empty or downloaded fields can still update from IGDB.'
+              )}
+            </p>
             <ToggleSwitch
               htmlId="metadata-download-images"
               value={downloadImages}

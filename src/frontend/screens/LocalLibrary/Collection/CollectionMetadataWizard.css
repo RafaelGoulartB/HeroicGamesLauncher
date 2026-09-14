@@ -21,6 +21,12 @@
   transition: width 0.2s ease;
 }
 
+.CollectionMetadataWizard__hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
 .CollectionMetadataWizard__status,
 .CollectionMetadataWizard__current {
   margin: 0;

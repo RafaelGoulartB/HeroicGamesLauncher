@@ -47,6 +47,8 @@ import {
   collectionMetadataKey,
   collectionStageArt
 } from './steamArt'
+import { collectionGameTitle } from './collectionTitle'
+import { collectTagOptions } from './collectionTags'
 import './index.css'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
@@ -374,7 +376,11 @@ export default function Collection() {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const next = games.filter((game) => {
-      if (query && !game.title.toLowerCase().includes(query)) return false
+      const title = collectionGameTitle(
+        game,
+        collectionMetadata[collectionMetadataKey(game.runner, game.app_name)]
+      )
+      if (query && !title.toLowerCase().includes(query)) return false
       if (installFilter === 'installed' && !game.is_installed) return false
       if (installFilter === 'uninstalled' && game.is_installed) return false
       return matchesFacets(
@@ -399,13 +405,31 @@ export default function Collection() {
           if (delta) return delta
         }
       }
-      return a.title.localeCompare(b.title)
+      return collectionGameTitle(
+        a,
+        collectionMetadata[collectionMetadataKey(a.runner, a.app_name)]
+      ).localeCompare(
+        collectionGameTitle(
+          b,
+          collectionMetadata[collectionMetadataKey(b.runner, b.app_name)]
+        )
+      )
     })
   }, [games, search, installFilter, sort, collectionMetadata, facetFilters])
 
   const facetOptions = useMemo(
     () =>
       collectFacetOptions(
+        games,
+        (game) =>
+          collectionMetadata[collectionMetadataKey(game.runner, game.app_name)]
+      ),
+    [games, collectionMetadata]
+  )
+
+  const tagOptions = useMemo(
+    () =>
+      collectTagOptions(
         games,
         (game) =>
           collectionMetadata[collectionMetadataKey(game.runner, game.app_name)]
@@ -814,6 +838,9 @@ export default function Collection() {
                 next
             }))
           }}
+          onMetaChange={(next) => {
+            setMetas((current) => ({ ...current, [next.appName]: next }))
+          }}
           cachedHeroUrl={
             paintedMeta?.steamAppId
               ? heroCache[paintedMeta.steamAppId]
@@ -822,6 +849,7 @@ export default function Collection() {
           statuses={statuses}
           facetFilters={facetFilters}
           onFacetFilter={handleFacetFilter}
+          tagOptions={tagOptions}
           onArtChange={(next) => {
             if (!paintedGame) return
             const key = collectionArtKey(
@@ -859,7 +887,12 @@ export default function Collection() {
           games={filtered.map((game) => ({
             appName: game.app_name,
             runner: game.runner === 'zoom' ? 'sideload' : game.runner,
-            title: game.overrides?.title || game.title,
+            title: collectionGameTitle(
+              game,
+              collectionMetadata[
+                collectionMetadataKey(game.runner, game.app_name)
+              ]
+            ),
             steamAppId: metas[game.app_name]?.steamAppId
           }))}
           progress={bulkProgress}

@@ -86,6 +86,7 @@ export function mergeMetadata(args: {
   }>
   priority: Record<MetadataField, MetadataSourceId[]>
   overwriteExisting?: boolean
+  preserveManual?: boolean
   fieldPicks?: Partial<Record<MetadataField, MetadataSourceId | 'keep'>>
 }): CollectionGameMetadata {
   const next: CollectionGameMetadata = {
@@ -113,7 +114,7 @@ export function mergeMetadata(args: {
       continue
     }
     const lockedManual =
-      !args.overwriteExisting &&
+      Boolean(args.preserveManual) &&
       args.current?.fieldSources?.[field] === 'manual'
     if (lockedManual) continue
     if (

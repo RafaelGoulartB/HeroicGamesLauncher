@@ -64,6 +64,7 @@ import CollectionMetadataDialog from './CollectionMetadataDialog'
 import { confirmForceStopPlaying } from './forceStopPlaying'
 import { openSteamStoreUri, steamAppIdFromMeta } from './steamActions'
 import { collectionCoverSrc } from './steamArt'
+import { collectionGameTitle } from './collectionTitle'
 import './CollectionCard.css'
 
 const storage: Storage = window.localStorage
@@ -123,7 +124,7 @@ export default function CollectionCard({
     is_installed: isInstalled,
     install: gameInstallInfo
   } = { ...gameInfoFromProps }
-  const title = gameInfoFromProps.overrides?.title || gameInfoFromProps.title
+  const title = collectionGameTitle(gameInfoFromProps, metadata)
   const cover = collectionCoverSrc(
     gameInfoFromProps,
     collectionArt,

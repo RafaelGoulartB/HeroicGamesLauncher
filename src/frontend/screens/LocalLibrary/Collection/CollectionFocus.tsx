@@ -45,12 +45,14 @@ import { collectionCoverSrc, collectionStageArt } from './steamArt'
 import { sanitizeSteamDescription } from './steamHtml'
 import CollectionGameArtDialog from './CollectionGameArtDialog'
 import CollectionMetadataDialog from './CollectionMetadataDialog'
+import { collectionGameTitle } from './collectionTitle'
 import {
   EMPTY_FACET_FILTERS,
   facetKey,
   type CollectionFacetFilters,
   type CollectionFacetKind
 } from './collectionFacets'
+import { EMPTY_TAG_OPTIONS, type CollectionTagKind } from './collectionTags'
 import './CollectionFocus.css'
 
 const SOURCE_LABELS: Record<LocalGameSource, string> = {
@@ -73,8 +75,10 @@ type Props = {
   cachedHeroUrl?: string
   facetFilters?: CollectionFacetFilters
   onFacetFilter?: (kind: CollectionFacetKind, value: string) => void
+  tagOptions?: Record<CollectionTagKind, string[]>
   onArtChange: (art: CollectionGameArt) => void
   onMetadataChange: (metadata: CollectionGameMetadata) => void
+  onMetaChange?: (meta: LocalGameMeta) => void
   onClose: () => void
 }
 
@@ -188,8 +192,10 @@ export default function CollectionFocus({
   cachedHeroUrl,
   facetFilters,
   onFacetFilter,
+  tagOptions,
   onArtChange,
   onMetadataChange,
+  onMetaChange,
   onClose
 }: Props) {
   const { t } = useTranslation()
@@ -212,8 +218,10 @@ export default function CollectionFocus({
       cachedHeroUrl={cachedHeroUrl}
       facetFilters={facetFilters}
       onFacetFilter={onFacetFilter}
+      tagOptions={tagOptions}
       onArtChange={onArtChange}
       onMetadataChange={onMetadataChange}
+      onMetaChange={onMetaChange}
       onClose={onClose}
     />
   )
@@ -228,8 +236,10 @@ function CollectionFocusPanel({
   cachedHeroUrl,
   facetFilters = EMPTY_FACET_FILTERS,
   onFacetFilter,
+  tagOptions = EMPTY_TAG_OPTIONS,
   onArtChange,
   onMetadataChange,
+  onMetaChange,
   onClose
 }: {
   game: GameInfo
@@ -240,8 +250,10 @@ function CollectionFocusPanel({
   cachedHeroUrl?: string
   facetFilters?: CollectionFacetFilters
   onFacetFilter?: (kind: CollectionFacetKind, value: string) => void
+  tagOptions?: Record<CollectionTagKind, string[]>
   onArtChange: (art: CollectionGameArt) => void
   onMetadataChange: (metadata: CollectionGameMetadata) => void
+  onMetaChange?: (meta: LocalGameMeta) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -269,8 +281,8 @@ function CollectionFocusPanel({
     () => timestampStore.get_nodefault(game.app_name)?.totalPlayed ?? 0
   )
 
-  const { app_name: appName, runner, overrides } = game
-  const title = overrides?.title || game.title
+  const { app_name: appName, runner } = game
+  const title = collectionGameTitle(gameInfo, metadata)
   const steamAppId = steamAppIdFromMeta(meta)
   const storeAppId = meta?.steamAppId
 
@@ -749,10 +761,12 @@ function CollectionFocusPanel({
                       />
                     </div>
                   )}
-                  {meta?.notes && (
+                  {(metadata?.notes || meta?.notes) && (
                     <div className="is-split">
                       <dt>{t('collection.focus.notes', 'Notes')}</dt>
-                      <dd className="is-wrap">{meta.notes}</dd>
+                      <dd className="is-wrap">
+                        {metadata?.notes || meta?.notes}
+                      </dd>
                     </div>
                   )}
                 </dl>
@@ -795,8 +809,8 @@ function CollectionFocusPanel({
         <button
           type="button"
           className="collectionFocus__iconBtn"
-          title={t('collection.gameArt.title', 'Game images')}
-          aria-label={t('collection.gameArt.title', 'Game images')}
+          title={t('collection.gameConfig.title', 'Game settings')}
+          aria-label={t('collection.gameConfig.title', 'Game settings')}
           onClick={() => setArtOpen(true)}
         >
           <Settings />
@@ -816,9 +830,16 @@ function CollectionFocusPanel({
           game={gameInfo}
           title={title}
           art={collectionArt}
+          metadata={metadata}
+          meta={meta}
           defaultCover={defaultCover}
           defaultHero={defaultHero}
+          tagOptions={tagOptions}
           onChange={onArtChange}
+          onDetailsChange={(next) => {
+            onMetadataChange(next.metadata)
+            if (next.meta) onMetaChange?.(next.meta)
+          }}
           onClose={() => setArtOpen(false)}
         />
       )}

@@ -77,6 +77,8 @@ import type {
   CollectionSettings,
   LudusaviBackupResult,
   LudusaviSettings,
+  CollectionGameDetailsPatch,
+  CollectionGameDetailsResult,
   CollectionGameMetadata,
   CollectionMetadataApplyArgs,
   CollectionMetadataBulkArgs,
@@ -356,6 +358,9 @@ interface AsyncIPCFunctions {
   applyCollectionMetadata: (
     args: CollectionMetadataApplyArgs
   ) => Promise<CollectionGameMetadata>
+  updateCollectionGameDetails: (
+    args: CollectionGameDetailsPatch
+  ) => Promise<CollectionGameDetailsResult>
   searchCollectionMetadata: (args: {
     title: string
   }) => Promise<CollectionMetadataSearchHit[]>

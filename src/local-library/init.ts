@@ -56,7 +56,8 @@ import {
   refreshMissingCollectionMetadata,
   searchGameMetadata,
   startBulkMetadata,
-  testIgdbCredentials
+  testIgdbCredentials,
+  updateCollectionGameDetails
 } from './metadata'
 
 let registered = false
@@ -148,6 +149,9 @@ export function registerLocalLibraryIpc() {
     previewGameMetadata(args)
   )
   addHandler('applyCollectionMetadata', (_e, args) => applyGameMetadata(args))
+  addHandler('updateCollectionGameDetails', (_e, args) =>
+    updateCollectionGameDetails(args)
+  )
   addHandler('searchCollectionMetadata', (_e, args) => searchGameMetadata(args))
   addHandler('startCollectionMetadataBulk', (_e, args) =>
     startBulkMetadata(args)

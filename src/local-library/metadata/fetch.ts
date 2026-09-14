@@ -177,6 +177,7 @@ export async function previewGameMetadata(
     candidates,
     priority: withPreferredSource(settingsPriority(), args.source),
     overwriteExisting: args.overwriteExisting !== false,
+    preserveManual: args.preserveManual ?? args.overwriteExisting === false,
     fieldPicks: args.fieldPicks
   })
   return {
@@ -312,6 +313,7 @@ async function runBulkMetadata(args: CollectionMetadataBulkArgs) {
             ...game,
             source: 'auto',
             overwriteExisting: overwrite,
+            preserveManual: args.preserveManual !== false,
             downloadImages: download
           })
           if (saved.fetchError) {
@@ -377,6 +379,7 @@ export async function refreshMissingCollectionMetadata(): Promise<number> {
         steamAppId: meta.steamAppId,
         source: 'auto',
         overwriteExisting: false,
+        preserveManual: true,
         downloadImages: getCollectionSettings().metadata.downloadImages
       })
       if (!saved.fetchError) filled += 1
@@ -410,7 +413,8 @@ export async function seedPlayniteMetadata(args: {
     current: existing,
     candidates: [{ source: 'playnite', metadata: fromPlaynite }],
     priority: settingsPriority(),
-    overwriteExisting: false
+    overwriteExisting: false,
+    preserveManual: true
   })
   return upsertGameMetadata(await persistImages(merged, false))
 }

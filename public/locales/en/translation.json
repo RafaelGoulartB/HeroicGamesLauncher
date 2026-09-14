@@ -247,6 +247,9 @@
             "menu": "Install filter",
             "uninstalled": "Not installed / Uninstalled"
         },
+        "focus": {
+            "notes": "Notes"
+        },
         "gameArt": {
             "change": "Change",
             "cover": "Cover",
@@ -258,7 +261,6 @@
             "reset": "Reset",
             "saving": "Saving…",
             "searchWeb": "Search web",
-            "title": "Game images",
             "webSearch": {
                 "downloadFailed": "Could not download the selected image.",
                 "empty": "No images found. Try another search.",
@@ -272,6 +274,23 @@
                 "title": "Search images",
                 "transparent": "Transparent"
             }
+        },
+        "gameConfig": {
+            "help": "These fields stay in Collection. Fetching metadata later will not overwrite values you edit here, unless you choose to overwrite.",
+            "name": "Name",
+            "restart": "Restart Heroic Local to load game details editing.",
+            "save": "Save",
+            "saving": "Saving…",
+            "scoreInvalid": "Score must be a number, or empty.",
+            "tab": {
+                "details": "Details",
+                "images": "Images"
+            },
+            "tabsLabel": "Game settings tabs",
+            "tagHelp": "Pick existing tags or type a new one and press Enter to create it.",
+            "tagPlaceholder": "Select or type to add",
+            "title": "Game settings",
+            "websites": "Websites"
         },
         "group": "Group by status",
         "hideSidebar": "Hide sidebar",
@@ -287,6 +306,19 @@
             "empty": "Empty",
             "fetch": "Fetch",
             "fetching": "Fetching…",
+            "field": {
+                "criticScore": "Score",
+                "description": "Description",
+                "developers": "Developers",
+                "features": "Features",
+                "gameModes": "Game modes",
+                "genres": "Genres",
+                "platforms": "Platforms",
+                "publishers": "Publishers",
+                "releaseDate": "Release date",
+                "series": "Series",
+                "themes": "Themes"
+            },
             "help": "IGDB is tried first, then Steam, the store page, Lutris, and Playnite files. Use this for games that are not on Steam.",
             "igdbFail": "IGDB test failed.",
             "igdbHeading": "Twitch / IGDB API",
@@ -315,6 +347,8 @@
                 "help": "Fetches IGDB first, then Steam, store, Lutris, and Playnite data. You can hide this window; the download keeps going. Open it again from the icon in the Collection header.",
                 "hide": "Hide",
                 "images": "Copy covers locally (uses more disk)",
+                "keepManual": "Keep fields edited by hand",
+                "keepManualHelp": "Name, notes, and any field you changed in Game settings stay as they are. Other empty or downloaded fields can still update from IGDB.",
                 "open": "Download metadata…",
                 "progress": "{{percent}}% — {{processed}} of {{total}}",
                 "ready_one": "{{count}} games in Collection will be checked.",
