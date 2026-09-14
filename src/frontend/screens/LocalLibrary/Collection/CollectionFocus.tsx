@@ -45,6 +45,12 @@ import { collectionCoverSrc, collectionStageArt } from './steamArt'
 import { sanitizeSteamDescription } from './steamHtml'
 import CollectionGameArtDialog from './CollectionGameArtDialog'
 import CollectionMetadataDialog from './CollectionMetadataDialog'
+import {
+  EMPTY_FACET_FILTERS,
+  facetKey,
+  type CollectionFacetFilters,
+  type CollectionFacetKind
+} from './collectionFacets'
 import './CollectionFocus.css'
 
 const SOURCE_LABELS: Record<LocalGameSource, string> = {
@@ -65,6 +71,8 @@ type Props = {
   collectionArt?: CollectionGameArt
   metadata?: CollectionGameMetadata
   cachedHeroUrl?: string
+  facetFilters?: CollectionFacetFilters
+  onFacetFilter?: (kind: CollectionFacetKind, value: string) => void
   onArtChange: (art: CollectionGameArt) => void
   onMetadataChange: (metadata: CollectionGameMetadata) => void
   onClose: () => void
@@ -78,15 +86,54 @@ function splitNames(value?: string) {
     .filter(Boolean)
 }
 
-function FactChips({ items }: { items: string[] }) {
+function FactChips({
+  items,
+  kind,
+  activeValue,
+  onSelect,
+  className
+}: {
+  items: string[]
+  kind?: CollectionFacetKind
+  activeValue?: string | null
+  onSelect?: (kind: CollectionFacetKind, value: string) => void
+  className?: string
+}) {
   if (!items.length) return null
   return (
-    <dd className="collectionFocus__chips">
-      {items.map((item) => (
-        <span key={item} className="collectionFocus__chip">
-          {item}
-        </span>
-      ))}
+    <dd
+      className={
+        className
+          ? `collectionFocus__chips ${className}`
+          : 'collectionFocus__chips'
+      }
+    >
+      {items.map((item) => {
+        const clickable = Boolean(kind && onSelect)
+        const active =
+          Boolean(activeValue) &&
+          facetKey(activeValue as string) === facetKey(item)
+        const className = active
+          ? 'collectionFocus__chip is-active'
+          : 'collectionFocus__chip'
+        if (!clickable || !kind || !onSelect) {
+          return (
+            <span key={item} className={className}>
+              {item}
+            </span>
+          )
+        }
+        return (
+          <button
+            key={item}
+            type="button"
+            className={`${className} is-button`}
+            onClick={() => onSelect(kind, item)}
+          >
+            {item}
+          </button>
+        )
+      })}
     </dd>
   )
 }
@@ -139,6 +186,8 @@ export default function CollectionFocus({
   collectionArt,
   metadata,
   cachedHeroUrl,
+  facetFilters,
+  onFacetFilter,
   onArtChange,
   onMetadataChange,
   onClose
@@ -161,6 +210,8 @@ export default function CollectionFocus({
       collectionArt={collectionArt}
       metadata={metadata}
       cachedHeroUrl={cachedHeroUrl}
+      facetFilters={facetFilters}
+      onFacetFilter={onFacetFilter}
       onArtChange={onArtChange}
       onMetadataChange={onMetadataChange}
       onClose={onClose}
@@ -175,6 +226,8 @@ function CollectionFocusPanel({
   collectionArt,
   metadata,
   cachedHeroUrl,
+  facetFilters = EMPTY_FACET_FILTERS,
+  onFacetFilter,
   onArtChange,
   onMetadataChange,
   onClose
@@ -185,6 +238,8 @@ function CollectionFocusPanel({
   collectionArt?: CollectionGameArt
   metadata?: CollectionGameMetadata
   cachedHeroUrl?: string
+  facetFilters?: CollectionFacetFilters
+  onFacetFilter?: (kind: CollectionFacetKind, value: string) => void
   onArtChange: (art: CollectionGameArt) => void
   onMetadataChange: (metadata: CollectionGameMetadata) => void
   onClose: () => void
@@ -595,19 +650,34 @@ function CollectionFocusPanel({
                   {developers.length > 0 && (
                     <div>
                       <dt>{tGame('info.developer', 'Developer')}</dt>
-                      <FactChips items={developers} />
+                      <FactChips
+                        items={developers}
+                        kind="developer"
+                        activeValue={facetFilters.developer}
+                        onSelect={onFacetFilter}
+                      />
                     </div>
                   )}
                   {publishers.length > 0 && (
                     <div>
                       <dt>{tGame('info.publisher', 'Publisher')}</dt>
-                      <FactChips items={publishers} />
+                      <FactChips
+                        items={publishers}
+                        kind="publisher"
+                        activeValue={facetFilters.publisher}
+                        onSelect={onFacetFilter}
+                      />
                     </div>
                   )}
                   {metadata?.series && (
                     <div>
                       <dt>{t('collection.metadata.field.series', 'Series')}</dt>
-                      <dd>{metadata.series}</dd>
+                      <FactChips
+                        items={[metadata.series]}
+                        kind="series"
+                        activeValue={facetFilters.series}
+                        onSelect={onFacetFilter}
+                      />
                     </div>
                   )}
                   {typeof metadata?.criticScore === 'number' && (
@@ -670,13 +740,13 @@ function CollectionFocusPanel({
                   {genres.length > 0 && (
                     <div className="is-split">
                       <dt>{t('collection.focus.tags', 'Tags')}</dt>
-                      <dd className="collectionFocus__chips collectionFocus__tags">
-                        {genres.map((genre) => (
-                          <span key={genre} className="collectionFocus__chip">
-                            {genre}
-                          </span>
-                        ))}
-                      </dd>
+                      <FactChips
+                        items={genres}
+                        kind="genre"
+                        activeValue={facetFilters.genre}
+                        onSelect={onFacetFilter}
+                        className="collectionFocus__tags"
+                      />
                     </div>
                   )}
                   {meta?.notes && (

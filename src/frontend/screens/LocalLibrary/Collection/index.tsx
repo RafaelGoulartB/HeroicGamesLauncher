@@ -28,10 +28,20 @@ import CollectionFocus from './CollectionFocus'
 import CollectionSettingsDialog from './CollectionSettingsDialog'
 import CollectionMetadataWizard from './CollectionMetadataWizard'
 import InstallFilterMenu, { type InstallFilter } from './InstallFilterMenu'
+import FacetFilterMenu from './FacetFilterMenu'
 import PlayniteMenu from './PlayniteMenu'
 import SortMenu, { type CollectionSort } from './SortMenu'
 import StatusMenu from './StatusMenu'
 import { STATUS_COLORS } from './statusColors'
+import {
+  collectFacetOptions,
+  EMPTY_FACET_FILTERS,
+  hasFacetFilters,
+  matchesFacets,
+  toggleFacetFilter,
+  type CollectionFacetFilters,
+  type CollectionFacetKind
+} from './collectionFacets'
 import {
   collectionArtKey,
   collectionMetadataKey,
@@ -40,6 +50,7 @@ import {
 import './index.css'
 
 const INSTALL_FILTER_KEY = 'collection_install_filter'
+const FACET_FILTER_KEY = 'collection_facet_filter'
 const SORT_KEY = 'collection_sort'
 const SIDEBAR_HIDDEN_KEY = 'collection_sidebar_hidden'
 const COLLAPSED_GROUPS_KEY = 'collection_collapsed_groups'
@@ -76,6 +87,31 @@ function readInstallFilter(): InstallFilter {
     return stored
   }
   return 'all'
+}
+
+function readFacetFilters(): CollectionFacetFilters {
+  try {
+    const stored = storage.getItem(FACET_FILTER_KEY)
+    if (!stored) return { ...EMPTY_FACET_FILTERS }
+    const parsed: unknown = JSON.parse(stored)
+    if (!parsed || typeof parsed !== 'object') return { ...EMPTY_FACET_FILTERS }
+    const value = parsed as Record<string, unknown>
+    const text = (key: CollectionFacetKind) =>
+      typeof value[key] === 'string' && value[key] ? value[key] : null
+    return {
+      series: text('series'),
+      developer: text('developer'),
+      publisher: text('publisher'),
+      genre: text('genre')
+    }
+  } catch {
+    return { ...EMPTY_FACET_FILTERS }
+  }
+}
+
+function persistFacetFilters(next: CollectionFacetFilters) {
+  if (!hasFacetFilters(next)) storage.removeItem(FACET_FILTER_KEY)
+  else storage.setItem(FACET_FILTER_KEY, JSON.stringify(next))
 }
 
 function readSort(): CollectionSort {
@@ -136,6 +172,8 @@ export default function Collection() {
   const [search, setSearch] = useState('')
   const [installFilter, setInstallFilter] =
     useState<InstallFilter>(readInstallFilter)
+  const [facetFilters, setFacetFilters] =
+    useState<CollectionFacetFilters>(readFacetFilters)
   const [sort, setSort] = useState<CollectionSort>(readSort)
   const [statuses, setStatuses] = useState<CompletionStatus[]>([])
   const [metas, setMetas] = useState<Record<string, LocalGameMeta>>({})
@@ -170,6 +208,19 @@ export default function Collection() {
   function handleInstallFilter(next: InstallFilter) {
     storage.setItem(INSTALL_FILTER_KEY, next)
     setInstallFilter(next)
+  }
+
+  function handleFacetFilter(kind: CollectionFacetKind, value: string) {
+    setFacetFilters((current) => {
+      const next = toggleFacetFilter(current, kind, value)
+      persistFacetFilters(next)
+      return next
+    })
+  }
+
+  function handleClearFacets() {
+    persistFacetFilters({ ...EMPTY_FACET_FILTERS })
+    setFacetFilters({ ...EMPTY_FACET_FILTERS })
   }
 
   function handleSort(next: CollectionSort) {
@@ -289,9 +340,13 @@ export default function Collection() {
     const query = search.trim().toLowerCase()
     const next = games.filter((game) => {
       if (query && !game.title.toLowerCase().includes(query)) return false
-      if (installFilter === 'installed') return game.is_installed
-      if (installFilter === 'uninstalled') return !game.is_installed
-      return true
+      if (installFilter === 'installed' && !game.is_installed) return false
+      if (installFilter === 'uninstalled' && game.is_installed) return false
+      return matchesFacets(
+        game,
+        collectionMetadata[collectionMetadataKey(game.runner, game.app_name)],
+        facetFilters
+      )
     })
 
     return next.sort((a, b) => {
@@ -311,7 +366,17 @@ export default function Collection() {
       }
       return a.title.localeCompare(b.title)
     })
-  }, [games, search, installFilter, sort])
+  }, [games, search, installFilter, sort, collectionMetadata, facetFilters])
+
+  const facetOptions = useMemo(
+    () =>
+      collectFacetOptions(
+        games,
+        (game) =>
+          collectionMetadata[collectionMetadataKey(game.runner, game.app_name)]
+      ),
+    [games, collectionMetadata]
+  )
 
   const grouped = useMemo(() => {
     const buckets = new Map<string, GameInfo[]>()
@@ -411,7 +476,8 @@ export default function Collection() {
     metas,
     sort,
     focusedKey,
-    collapsedGroups
+    collapsedGroups,
+    facetFilters
   ])
 
   useEffect(() => {
@@ -537,6 +603,12 @@ export default function Collection() {
               onChange={(event) => handleSearch(event.target.value)}
             />
           </label>
+          <FacetFilterMenu
+            filters={facetFilters}
+            options={facetOptions}
+            onChange={handleFacetFilter}
+            onClear={handleClearFacets}
+          />
           <SortMenu value={sort} onChange={handleSort} />
           <StatusMenu
             groupByStatus={groupByStatus}
@@ -670,6 +742,8 @@ export default function Collection() {
               : undefined
           }
           statuses={statuses}
+          facetFilters={facetFilters}
+          onFacetFilter={handleFacetFilter}
           onArtChange={(next) => {
             if (!paintedGame) return
             const key = collectionArtKey(

@@ -232,6 +232,17 @@
         "addStatus": "Add",
         "filter": {
             "all": "All games",
+            "facets": {
+                "all": "All",
+                "clear": "Clear filters",
+                "developer": "Developer",
+                "empty": "None in this library",
+                "genre": "Genre",
+                "menu": "Filter by series, developer, publisher",
+                "publisher": "Publisher",
+                "search": "Filter list",
+                "series": "Series"
+            },
             "installed": "Installed",
             "menu": "Install filter",
             "uninstalled": "Not installed / Uninstalled"
